@@ -1,0 +1,32 @@
+# Feed sources for pressroom.
+# Run `pressroom sources sync` to load these into the database.
+#
+# Each [[source]] block accepts:
+#   name                   — display name (unique)
+#   feed_url               — RSS or Atom feed URL (unique)
+#   category               — free-form label, e.g. "tech", "gaming", "general"
+#   language               — BCP-47 code, e.g. "en", "de", "nl"
+#   fetch_interval_minutes — minimum minutes between fetches (default 60, min 5)
+#   homepage_url           — optional, the site's main page
+
+# ---------------------------------------------------------------------------
+# Example entries — uncomment and edit to activate.
+# ---------------------------------------------------------------------------
+
+# [[source]]
+# name = "Ars Technica"
+# feed_url = "https://feeds.arstechnica.com/arstechnica/index"
+# category = "tech"
+# language = "en"
+
+# [[source]]
+# name = "GameStar (Gaming)"
+# feed_url = "https://www.gamestar.de/rss/gaming.rss"
+# category = "gaming"
+# language = "de"
+
+# [[source]]
+# name = "Heise Online"
+# feed_url = "https://www.heise.de/rss/heise-atom.xml"
+# category = "tech"
+# language = "de"
