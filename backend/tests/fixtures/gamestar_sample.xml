@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>GameStar – Gaming</title>
+    <link>https://www.gamestar.de</link>
+    <description>Gaming-News von GameStar</description>
+
+    <!-- Entry 1: full body via content:encoded, explicit guid, author -->
+    <item>
+      <title>Test-Spiel im Test: Großartig oder nicht?</title>
+      <link>https://www.gamestar.de/artikel/test-spiel,1234567.html</link>
+      <guid isPermaLink="false">gamestar-article-1234567</guid>
+      <pubDate>Mon, 20 Jan 2025 09:00:00 +0000</pubDate>
+      <author>redaktion@gamestar.de (Max Mustermann)</author>
+      <description>Kurze Zusammenfassung des ersten Testartikels.</description>
+      <content:encoded><![CDATA[<p>Dies ist der <strong>vollständige</strong> Artikeltext.</p>
+<p>Zweiter Absatz mit mehr Inhalt und <a href="https://example.com">einem Link</a>.</p>]]></content:encoded>
+    </item>
+
+    <!-- Entry 2: summary only, no guid, no author -->
+    <item>
+      <title>Nur-Summary Artikel ohne vollständigen Text</title>
+      <link>https://www.gamestar.de/artikel/nur-summary,9876543.html</link>
+      <pubDate>Sun, 19 Jan 2025 15:30:00 +0000</pubDate>
+      <description>Dieser Artikel hat nur eine kurze Beschreibung und keinen vollständigen Text.</description>
+    </item>
+
+  </channel>
+</rss>
