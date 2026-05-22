@@ -191,5 +191,30 @@ def daemon() -> None:
         conn.close()
 
 
+# ---------------------------------------------------------------------------
+# pressroom serve
+# ---------------------------------------------------------------------------
+
+
+@app.command("serve")
+def serve(
+    host: Annotated[
+        str,
+        typer.Option(help="Bind host."),
+    ] = "127.0.0.1",
+    port: Annotated[
+        int,
+        typer.Option(help="Bind port."),
+    ] = 8000,
+) -> None:
+    """Start the API server with uvicorn."""
+    import uvicorn
+
+    from pressroom.api.app import create_app
+
+    typer.echo(f"Starting pressroom API on http://{host}:{port}")
+    uvicorn.run(create_app(), host=host, port=port)
+
+
 if __name__ == "__main__":
     app()

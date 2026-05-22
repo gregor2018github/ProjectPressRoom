@@ -4,6 +4,7 @@ All SQL uses parameterised queries — no string formatting anywhere.
 """
 
 import sqlite3
+from datetime import datetime
 from typing import Literal
 
 from pressroom.models import Article, FetchRun, InsertResult, Source
@@ -15,6 +16,10 @@ def _to_source(row: sqlite3.Row) -> Source:
 
 def _to_article(row: sqlite3.Row) -> Article:
     return Article.model_validate(dict(row))
+
+
+def _to_fetch_run(row: sqlite3.Row) -> FetchRun:
+    return FetchRun.model_validate(dict(row))
 
 
 class Repository:
@@ -66,11 +71,46 @@ class Repository:
         self._conn.commit()
         return int(row[0])
 
+    def insert_source(self, source: Source) -> int:
+        """Insert a new source; raise :exc:`sqlite3.IntegrityError` on duplicate.
+
+        Unlike :meth:`upsert_source` this never overwrites an existing row.
+        """
+        cursor = self._conn.execute(
+            """
+            INSERT INTO sources (
+                name, feed_url, feed_type, homepage_url,
+                category, language, is_active, fetch_interval_minutes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING id
+            """,
+            (
+                source.name,
+                source.feed_url,
+                source.feed_type,
+                source.homepage_url,
+                source.category,
+                source.language,
+                1 if source.is_active else 0,
+                source.fetch_interval_minutes,
+            ),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            raise RuntimeError("insert_source did not return a row id")
+        self._conn.commit()
+        return int(row[0])
+
     def list_active_sources(self) -> list[Source]:
         """Return all sources where ``is_active = 1``, ordered by name."""
         cursor = self._conn.execute(
             "SELECT * FROM sources WHERE is_active = 1 ORDER BY name"
         )
+        return [_to_source(row) for row in cursor]
+
+    def list_all_sources(self) -> list[Source]:
+        """Return all sources regardless of ``is_active``, ordered by name."""
+        cursor = self._conn.execute("SELECT * FROM sources ORDER BY name")
         return [_to_source(row) for row in cursor]
 
     def get_source_by_id(self, source_id: int) -> Source | None:
@@ -79,6 +119,34 @@ class Repository:
             "SELECT * FROM sources WHERE id = ?", (source_id,)
         ).fetchone()
         return _to_source(row) if row is not None else None
+
+    def update_source_fields(
+        self,
+        source_id: int,
+        *,
+        is_active: bool | None = None,
+        fetch_interval_minutes: int | None = None,
+    ) -> bool:
+        """Update editable user fields; return False if the source does not exist.
+
+        Passing ``None`` for a field leaves it unchanged (COALESCE logic).
+        """
+        cursor = self._conn.execute(
+            """
+            UPDATE sources
+            SET is_active              = COALESCE(?, is_active),
+                fetch_interval_minutes = COALESCE(?, fetch_interval_minutes),
+                updated_at             = datetime('now')
+            WHERE id = ?
+            """,
+            (
+                (1 if is_active else 0) if is_active is not None else None,
+                fetch_interval_minutes,
+                source_id,
+            ),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
 
     def update_source_fetch_meta(
         self,
@@ -108,6 +176,11 @@ class Repository:
     # ------------------------------------------------------------------
     # Articles
     # ------------------------------------------------------------------
+
+    def count_articles(self) -> int:
+        """Return the total number of articles stored."""
+        row = self._conn.execute("SELECT COUNT(*) FROM articles").fetchone()
+        return int(row[0])
 
     def insert_article(self, article: Article) -> InsertResult:
         """Insert *article*; return NEW or DUPLICATE on constraint violation.
@@ -155,6 +228,113 @@ class Repository:
         ).fetchone()
         return row is not None
 
+    def list_articles(
+        self,
+        *,
+        source_id: int | None = None,
+        language: str | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
+        is_read: bool | None = None,
+        is_starred: bool | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> tuple[list[Article], int]:
+        """Return a paginated list of articles and the unfiltered total count.
+
+        All filter params are optional; passing ``None`` skips that filter.
+        Results are ordered newest-first by ``published_at``.
+        """
+        params: dict[str, object] = {
+            "source_id": source_id,
+            "language": language,
+            "from_date": from_date.isoformat() if from_date else None,
+            "to_date": to_date.isoformat() if to_date else None,
+            "is_read": (1 if is_read else 0) if is_read is not None else None,
+            "is_starred": (1 if is_starred else 0) if is_starred is not None else None,
+        }
+
+        where = """
+            WHERE (:source_id   IS NULL OR source_id   = :source_id)
+              AND (:language     IS NULL OR language    = :language)
+              AND (:from_date    IS NULL OR published_at >= :from_date)
+              AND (:to_date      IS NULL OR published_at <= :to_date)
+              AND (:is_read      IS NULL OR is_read      = :is_read)
+              AND (:is_starred   IS NULL OR is_starred   = :is_starred)
+        """
+
+        total_row = self._conn.execute(
+            f"SELECT COUNT(*) FROM articles {where}", params
+        ).fetchone()
+        total = int(total_row[0])
+
+        rows = self._conn.execute(
+            f"SELECT * FROM articles {where} ORDER BY published_at DESC LIMIT :limit OFFSET :offset",
+            {**params, "limit": page_size, "offset": (page - 1) * page_size},
+        ).fetchall()
+
+        return [_to_article(row) for row in rows], total
+
+    def get_article_by_id(self, article_id: int) -> Article | None:
+        """Return the article with *article_id*, or None if not found."""
+        row = self._conn.execute(
+            "SELECT * FROM articles WHERE id = ?", (article_id,)
+        ).fetchone()
+        return _to_article(row) if row is not None else None
+
+    def search_articles(self, query: str, limit: int = 50) -> list[tuple[Article, str]]:
+        """Full-text search using FTS5; returns ``(article, snippet)`` pairs.
+
+        The snippet highlights matched terms with ``<mark>...</mark>``.
+        Returns an empty list when *query* is invalid FTS5 syntax.
+        """
+        try:
+            rows = self._conn.execute(
+                """
+                SELECT a.*,
+                       snippet(articles_fts, 2, '<mark>', '</mark>', '…', 20) AS fts_snippet
+                FROM   articles_fts
+                JOIN   articles a ON articles_fts.rowid = a.id
+                WHERE  articles_fts MATCH ?
+                ORDER  BY rank
+                LIMIT  ?
+                """,
+                (query, limit),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            return []
+
+        result: list[tuple[Article, str]] = []
+        for row in rows:
+            d = dict(row)
+            snippet = str(d.pop("fts_snippet") or "")
+            result.append((Article.model_validate(d), snippet))
+        return result
+
+    def patch_article(
+        self,
+        article_id: int,
+        *,
+        is_read: bool | None = None,
+        is_starred: bool | None = None,
+    ) -> bool:
+        """Update read/starred state; return False if the article does not exist."""
+        cursor = self._conn.execute(
+            """
+            UPDATE articles
+            SET is_read    = COALESCE(?, is_read),
+                is_starred = COALESCE(?, is_starred)
+            WHERE id = ?
+            """,
+            (
+                (1 if is_read else 0) if is_read is not None else None,
+                (1 if is_starred else 0) if is_starred is not None else None,
+                article_id,
+            ),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
     # ------------------------------------------------------------------
     # Fetch runs
     # ------------------------------------------------------------------
@@ -198,3 +378,18 @@ class Repository:
             ),
         )
         self._conn.commit()
+
+    def get_last_run_for_source(self, source_id: int) -> FetchRun | None:
+        """Return the most recent fetch run for *source_id*, or None."""
+        row = self._conn.execute(
+            "SELECT * FROM fetch_runs WHERE source_id = ? ORDER BY started_at DESC LIMIT 1",
+            (source_id,),
+        ).fetchone()
+        return _to_fetch_run(row) if row is not None else None
+
+    def list_recent_runs(self, limit: int = 50) -> list[FetchRun]:
+        """Return the *limit* most recent fetch runs across all sources, newest first."""
+        rows = self._conn.execute(
+            "SELECT * FROM fetch_runs ORDER BY started_at DESC LIMIT ?", (limit,)
+        ).fetchall()
+        return [_to_fetch_run(row) for row in rows]

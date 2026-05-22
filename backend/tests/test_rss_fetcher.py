@@ -3,10 +3,10 @@
 from pathlib import Path
 
 import httpx
-from tests.conftest import make_async_transport
 
 from pressroom.fetchers.rss import RssFetcher
 from pressroom.models import Source
+from tests.conftest import make_async_transport
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "gamestar_sample.xml"
 

@@ -1,10 +1,10 @@
 """Tests for pressroom.http_client."""
 
 import httpx
-from tests.conftest import make_async_transport
 
 from pressroom.config import settings
 from pressroom.http_client import get_client
+from tests.conftest import make_async_transport
 
 
 async def test_user_agent_header_is_sent() -> None:
