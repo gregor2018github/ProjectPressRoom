@@ -84,7 +84,7 @@ def sync_sources(repo: Repository = Depends(get_repo)) -> dict[str, object]:
     if not sources_file.exists():
         raise HTTPException(
             status_code=404,
-            detail=f"config/sources.toml not found (tried CWD and project root). "
+            detail="config/sources.toml not found (tried CWD and project root). "
             "Make sure the file exists at the project root.",
         )
 

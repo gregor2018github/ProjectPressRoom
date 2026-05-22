@@ -38,6 +38,15 @@ def create_app() -> FastAPI:
     def health(repo: Repository = Depends(get_repo)) -> dict[str, object]:
         return {"status": "ok", "articles": repo.count_articles()}
 
+    @app.post("/api/shutdown", tags=["meta"])
+    def shutdown() -> dict[str, str]:
+        """Shut down the server process after sending the response."""
+        import sys
+        import threading
+
+        threading.Thread(target=lambda: (__import__("time").sleep(0.3), sys.exit(0)), daemon=True).start()
+        return {"status": "shutting down"}
+
     app.include_router(sources.router, prefix="/api")
     app.include_router(articles.router, prefix="/api")
     app.include_router(runs.router, prefix="/api")

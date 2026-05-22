@@ -140,6 +140,9 @@ export const patchArticle = (id: number, body: { is_read?: boolean; is_starred?:
 
 export const getRuns = (limit = 50) => req<FetchRun[]>(`/api/runs?limit=${limit}`)
 
+export const shutdownApp = () =>
+  req<{ status: string }>('/api/shutdown', { method: 'POST' })
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
