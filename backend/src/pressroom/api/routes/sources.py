@@ -76,12 +76,16 @@ def sync_sources(repo: Repository = Depends(get_repo)) -> dict[str, object]:
 
     from pressroom.models import Source as SourceModel
 
+    # Resolve relative to CWD first; fall back to path derived from this file's location
+    # (repo_root/backend/src/pressroom/api/routes/sources.py → 5 parents up = repo_root/backend → 1 more = repo_root)
     sources_file = Path("config/sources.toml")
+    if not sources_file.exists():
+        sources_file = Path(__file__).resolve().parents[5] / "config" / "sources.toml"
     if not sources_file.exists():
         raise HTTPException(
             status_code=404,
-            detail=f"Sources file not found at {sources_file}. "
-            "Run the server from the project root directory.",
+            detail=f"config/sources.toml not found (tried CWD and project root). "
+            "Make sure the file exists at the project root.",
         )
 
     with sources_file.open("rb") as fh:

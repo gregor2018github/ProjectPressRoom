@@ -201,9 +201,17 @@ pressroom serve --build-frontend
 
 Or build separately and then serve:
 
-```bash
-cd frontend && npm run build && cd ../backend
+```powershell
+# Windows PowerShell
+cd frontend
+npm run build
+cd ../backend
 pressroom serve          # http://localhost:8000 serves API + UI
+```
+
+```bash
+# Linux / macOS
+cd frontend && npm run build && cd ../backend && pressroom serve
 ```
 
 The built UI lives at `frontend/dist/` and is mounted at `/` by FastAPI's StaticFiles. All `/api/*` routes remain available alongside it. Unknown paths fall back to `index.html` so the React router handles client-side navigation.

@@ -31,6 +31,15 @@ export default function SetupPage() {
     getHealth()
       .then(setHealth)
       .catch(() => undefined)
+    // Pre-populate fetch rows from any sources already in the DB
+    getSources()
+      .then(sources => {
+        const active = sources.filter(s => s.is_active)
+        if (active.length > 0) {
+          setFetchRows(active.map(s => ({ source: s, run: null, status: 'idle' as const })))
+        }
+      })
+      .catch(() => undefined)
   }, [])
 
   const reloadHealth = () =>
@@ -83,7 +92,7 @@ export default function SetupPage() {
     }
 
     setFetching(false)
-    setFetchDone(true)
+    if (rows.length > 0) setFetchDone(true)
     void reloadHealth()
   }
 
@@ -151,10 +160,14 @@ export default function SetupPage() {
         <button
           className={styles.btn}
           onClick={() => void handleFetchAll()}
-          disabled={fetching}
+          disabled={fetching || fetchRows.length === 0}
+          title={fetchRows.length === 0 ? 'Sync sources first' : undefined}
         >
           {fetching ? 'Fetching…' : fetchDone ? 'Fetch again' : 'Fetch all'}
         </button>
+        {fetchRows.length === 0 && !fetching && (
+          <p className={styles.hint}>Run "Sync now" first to load sources into the database.</p>
+        )}
 
         {fetchRows.length > 0 && (
           <ul className={styles.fetchList}>

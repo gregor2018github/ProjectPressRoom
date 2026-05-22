@@ -13,20 +13,20 @@
 # Example entries — uncomment and edit to activate.
 # ---------------------------------------------------------------------------
 
-# [[source]]
-# name = "Ars Technica"
-# feed_url = "https://feeds.arstechnica.com/arstechnica/index"
-# category = "tech"
-# language = "en"
+[[source]]
+name = "Ars Technica"
+feed_url = "https://feeds.arstechnica.com/arstechnica/index"
+category = "tech"
+language = "en"
 
-# [[source]]
-# name = "GameStar (Gaming)"
-# feed_url = "https://www.gamestar.de/rss/gaming.rss"
-# category = "gaming"
-# language = "de"
+[[source]]
+name = "GameStar (Gaming)"
+feed_url = "https://www.gamestar.de/rss/gaming.rss"
+category = "gaming"
+language = "de"
 
-# [[source]]
-# name = "Heise Online"
-# feed_url = "https://www.heise.de/rss/heise-atom.xml"
-# category = "tech"
-# language = "de"
+[[source]]
+name = "Heise Online"
+feed_url = "https://www.heise.de/rss/heise-atom.xml"
+category = "tech"
+language = "de"
