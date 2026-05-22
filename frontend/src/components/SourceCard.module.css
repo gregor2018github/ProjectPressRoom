@@ -1,0 +1,144 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.card.inactive {
+  opacity: 0.6;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.names {
+  min-width: 0;
+}
+
+.name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tags {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.45rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  cursor: pointer;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--border);
+  color: var(--text-muted);
+}
+
+.badge.ok {
+  background: #dcfce7;
+  color: var(--ok);
+}
+
+.badge.error {
+  background: #fee2e2;
+  color: var(--error);
+}
+
+.badge.not_modified {
+  background: #e0f2fe;
+  color: var(--info);
+}
+
+.badge.running {
+  background: #fef9c3;
+  color: var(--warning);
+}
+
+.newCount {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.time {
+  color: var(--text-muted);
+}
+
+.never {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.error {
+  font-size: 0.8rem;
+  color: var(--error);
+  word-break: break-word;
+}
+
+.fetchBtn {
+  align-self: flex-start;
+  padding: 0.35rem 0.85rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.fetchBtn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.fetchBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
