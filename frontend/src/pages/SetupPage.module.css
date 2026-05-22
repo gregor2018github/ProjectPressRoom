@@ -201,6 +201,29 @@
   color: var(--text-muted);
 }
 
+.fetchOneBtn {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.fetchOneBtn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.fetchOneBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .fetchError {
   font-size: 0.82rem;
   color: var(--error);

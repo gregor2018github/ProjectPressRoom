@@ -9,7 +9,7 @@ function StatusBadge({ status }: { status: string | null }) {
 
 interface Props {
   source: Source
-  onChange: (updated: Source) => void
+  onChange: () => void
 }
 
 export default function SourceCard({ source, onChange }: Props) {
@@ -17,8 +17,8 @@ export default function SourceCard({ source, onChange }: Props) {
 
   const handleToggle = async (active: boolean) => {
     try {
-      const updated = await patchSource(source.id, { is_active: active })
-      onChange(updated)
+      await patchSource(source.id, { is_active: active })
+      onChange()
     } catch {
       // keep previous state on error
     }
@@ -28,8 +28,7 @@ export default function SourceCard({ source, onChange }: Props) {
     setFetching(true)
     try {
       await triggerFetch(source.id)
-      // Refresh by re-fetching source list at parent; signal via onChange with same source
-      onChange({ ...source })
+      onChange()
     } finally {
       setFetching(false)
     }

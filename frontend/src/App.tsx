@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import styles from './App.module.css'
 import { type Health, getHealth } from './api/client'
 import ArticlePage from './pages/ArticlePage'
@@ -33,17 +33,18 @@ function Nav({ health }: { health: Health | null }) {
   )
 }
 
-export default function App() {
+function AppShell() {
   const [health, setHealth] = useState<Health | null>(null)
+  const location = useLocation()
 
   useEffect(() => {
     getHealth()
       .then(setHealth)
       .catch(() => undefined)
-  }, [])
+  }, [location.pathname])
 
   return (
-    <BrowserRouter>
+    <>
       <Nav health={health} />
       <main className={styles.main}>
         <Routes>
@@ -54,6 +55,14 @@ export default function App() {
           <Route path="/setup" element={<SetupPage />} />
         </Routes>
       </main>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
     </BrowserRouter>
   )
 }

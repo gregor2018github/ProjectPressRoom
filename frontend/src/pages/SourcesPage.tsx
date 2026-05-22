@@ -18,14 +18,9 @@ export default function SourcesPage() {
     load()
   }, [])
 
-  const handleChange = (updated: Source) => {
-    // After a toggle or fetch, reload the full list to get fresh last-run data
+  const handleChange = () => {
     getSources()
-      .then(list => {
-        setSources(list)
-        // Re-apply the update optimistically for is_active changes
-        setSources(list.map(s => (s.id === updated.id ? { ...s, ...updated } : s)))
-      })
+      .then(setSources)
       .catch(() => undefined)
   }
 
@@ -47,7 +42,7 @@ export default function SourcesPage() {
       <h1 className={styles.heading}>Sources</h1>
       <div className={styles.grid}>
         {sources.map(s => (
-          <SourceCard key={s.id} source={s} onChange={handleChange} />
+          <SourceCard key={s.id} source={s} onChange={() => handleChange()} />
         ))}
       </div>
     </div>

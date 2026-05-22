@@ -67,6 +67,21 @@ export default function SetupPage() {
     }
   }
 
+  const handleFetchOne = async (index: number) => {
+    const row = fetchRows[index]
+    if (!row || row.status === 'running') return
+    setFetchRows(prev =>
+      prev.map((r, i) => (i === index ? { ...r, status: 'running', run: null } : r)),
+    )
+    const run = await triggerFetch(row.source.id).catch(() => null)
+    const status: FetchRow['status'] =
+      run?.status === 'ok' || run?.status === 'not_modified' ? 'done' : 'error'
+    setFetchRows(prev =>
+      prev.map((r, i) => (i === index ? { ...r, run, status } : r)),
+    )
+    void reloadHealth()
+  }
+
   const handleFetchAll = async () => {
     setFetching(true)
     setFetchDone(false)
@@ -171,7 +186,7 @@ export default function SetupPage() {
 
         {fetchRows.length > 0 && (
           <ul className={styles.fetchList}>
-            {fetchRows.map(row => (
+            {fetchRows.map((row, index) => (
               <li key={row.source.id} className={`${styles.fetchRow} ${styles[row.status]}`}>
                 <span className={styles.fetchIcon}>
                   {row.status === 'idle' && '○'}
@@ -188,6 +203,14 @@ export default function SetupPage() {
                 {row.run && row.status === 'error' && (
                   <span className={styles.fetchError}>{row.run.error_message ?? 'error'}</span>
                 )}
+                <button
+                  className={styles.fetchOneBtn}
+                  disabled={row.status === 'running' || fetching}
+                  onClick={() => void handleFetchOne(index)}
+                  title="Fetch this source"
+                >
+                  {row.status === 'running' ? '…' : '↻'}
+                </button>
               </li>
             ))}
           </ul>
