@@ -1,0 +1,204 @@
+.page {
+  max-width: 640px;
+}
+
+.heading {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.healthBar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.healthDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.healthStat {
+  font-weight: 500;
+}
+
+/* Cards */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.doneCard {
+  border-color: var(--ok);
+}
+
+.cardHeader {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.step {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
+}
+
+.stepDone {
+  background: var(--ok);
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.cardDesc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cardDesc code {
+  font-family: monospace;
+  font-size: 0.85em;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+
+/* Buttons */
+
+.btn {
+  padding: 0.45rem 1.1rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btnLink {
+  display: inline-block;
+  padding: 0.45rem 1.1rem;
+  background: var(--ok);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.btnLink:hover {
+  opacity: 0.88;
+}
+
+/* Feedback */
+
+.success {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ok);
+}
+
+.sourceList {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.error {
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: var(--error);
+}
+
+/* Fetch progress list */
+
+.fetchList {
+  list-style: none;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fetchRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.fetchRow:last-child {
+  border-bottom: none;
+}
+
+.fetchIcon {
+  flex-shrink: 0;
+  width: 1.1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.idle .fetchIcon   { color: var(--text-muted); }
+.running .fetchIcon { color: var(--warning); }
+.done .fetchIcon   { color: var(--ok); }
+.error .fetchIcon  { color: var(--error); }
+
+.fetchName {
+  flex: 1;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.fetchStats {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.fetchError {
+  font-size: 0.82rem;
+  color: var(--error);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}

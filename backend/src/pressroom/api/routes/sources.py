@@ -68,6 +68,40 @@ def list_sources(repo: Repository = Depends(get_repo)) -> list[SourceResponse]:
     return [_enrich(s, repo) for s in repo.list_all_sources()]
 
 
+@router.post("/sources/sync")
+def sync_sources(repo: Repository = Depends(get_repo)) -> dict[str, object]:
+    """Read config/sources.toml and upsert all entries; returns {synced, sources}."""
+    import tomllib
+    from pathlib import Path
+
+    from pressroom.models import Source as SourceModel
+
+    sources_file = Path("config/sources.toml")
+    if not sources_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Sources file not found at {sources_file}. "
+            "Run the server from the project root directory.",
+        )
+
+    with sources_file.open("rb") as fh:
+        data = tomllib.load(fh)
+
+    raw_sources: list[dict[str, object]] = data.get("source", [])
+    if not raw_sources:
+        return {"synced": 0, "sources": []}
+
+    enriched = []
+    for raw in raw_sources:
+        source = SourceModel.model_validate(raw)
+        source_id = repo.upsert_source(source)
+        fetched = repo.get_source_by_id(source_id)
+        if fetched is not None:
+            enriched.append(_enrich(fetched, repo).model_dump())
+
+    return {"synced": len(enriched), "sources": enriched}
+
+
 @router.post("/sources", status_code=201)
 def create_source(
     body: CreateSourceBody,

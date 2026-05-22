@@ -5,6 +5,7 @@ import { type Health, getHealth } from './api/client'
 import ArticlePage from './pages/ArticlePage'
 import InboxPage from './pages/InboxPage'
 import SearchPage from './pages/SearchPage'
+import SetupPage from './pages/SetupPage'
 import SourcesPage from './pages/SourcesPage'
 
 function Nav({ health }: { health: Health | null }) {
@@ -20,6 +21,9 @@ function Nav({ health }: { health: Health | null }) {
         </NavLink>
         <NavLink to="/search" className={({ isActive }) => (isActive ? styles.active : '')}>
           Search
+        </NavLink>
+        <NavLink to="/setup" className={({ isActive }) => (isActive ? styles.active : '')}>
+          Setup
         </NavLink>
       </nav>
       {health !== null && (
@@ -47,6 +51,7 @@ export default function App() {
           <Route path="/sources" element={<SourcesPage />} />
           <Route path="/articles/:id" element={<ArticlePage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/setup" element={<SetupPage />} />
         </Routes>
       </main>
     </BrowserRouter>

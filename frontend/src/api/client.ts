@@ -95,7 +95,15 @@ export interface Health {
 
 export const getHealth = () => req<Health>('/api/health')
 
+export interface SyncResult {
+  synced: number
+  sources: Source[]
+}
+
 export const getSources = () => req<Source[]>('/api/sources')
+
+export const syncSources = () =>
+  req<SyncResult>('/api/sources/sync', { method: 'POST' })
 
 export const patchSource = (id: number, body: { is_active?: boolean; fetch_interval_minutes?: number }) =>
   req<Source>(`/api/sources/${id}`, { method: 'PATCH', ...json(body) })
