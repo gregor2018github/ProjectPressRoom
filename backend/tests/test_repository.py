@@ -184,3 +184,41 @@ def test_log_fetch_run_initial_status_is_running(repo: Repository) -> None:
     ).fetchone()
     assert row is not None
     assert row["status"] == "running"
+
+
+# ---------------------------------------------------------------------------
+# FTS search
+# ---------------------------------------------------------------------------
+
+
+def test_search_articles_finds_known_title(repo: Repository) -> None:
+    source_id = repo.upsert_source(_source())
+    a = Article(
+        source_id=source_id,
+        external_id="fts-guid-1",
+        url="https://example.com/fts-article",
+        title="Unique Searchable Headline",
+        body_text="The quick brown fox jumps over the lazy dog.",
+        content_hash=hashlib.sha256(b"https://example.com/fts-article\nUnique Searchable Headline").hexdigest(),
+    )
+    repo.insert_article(a)
+
+    results = repo.search_articles("Searchable")
+    assert len(results) == 1
+    article, snippet = results[0]
+    assert article.title == "Unique Searchable Headline"
+    assert isinstance(snippet, str)
+
+
+def test_search_articles_returns_empty_for_no_match(repo: Repository) -> None:
+    source_id = repo.upsert_source(_source())
+    a = _article(source_id, url="https://example.com/nosearch", title="Nothing here")
+    repo.insert_article(a)
+
+    results = repo.search_articles("xyzzy_nonexistent_term")
+    assert results == []
+
+
+def test_search_articles_invalid_fts_syntax_returns_empty(repo: Repository) -> None:
+    results = repo.search_articles("AND")
+    assert results == []

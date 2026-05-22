@@ -29,6 +29,29 @@ def _main() -> None:
 # ---------------------------------------------------------------------------
 
 
+@db_app.command("backup")
+def db_backup(
+    dest: Annotated[
+        Path,
+        typer.Argument(help="Destination path for the backup file."),
+    ],
+) -> None:
+    """Create an online backup of the database (safe while the daemon runs)."""
+    import sqlite3
+
+    from pressroom.config import settings
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    src_conn = sqlite3.connect(settings.db_path)
+    dst_conn = sqlite3.connect(dest)
+    try:
+        src_conn.backup(dst_conn)
+        typer.echo(f"Backup written to {dest}.")
+    finally:
+        dst_conn.close()
+        src_conn.close()
+
+
 @db_app.command("init")
 def db_init(
     db_path: Annotated[
@@ -206,11 +229,34 @@ def serve(
         int,
         typer.Option(help="Bind port."),
     ] = 8000,
+    build_frontend: Annotated[
+        bool,
+        typer.Option("--build-frontend", help="Run 'npm run build' in frontend/ before serving."),
+    ] = False,
 ) -> None:
     """Start the API server with uvicorn."""
+    import subprocess
+    from pathlib import Path as _Path
+
     import uvicorn
 
     from pressroom.api.app import create_app
+
+    if build_frontend:
+        frontend_dir = _Path(__file__).parent.parent.parent.parent.parent / "frontend"
+        if not frontend_dir.is_dir():
+            typer.echo("frontend/ directory not found — skipping build.", err=True)
+        else:
+            typer.echo("Building frontend…")
+            result = subprocess.run(
+                ["npm", "run", "build"],
+                cwd=frontend_dir,
+                check=False,
+            )
+            if result.returncode != 0:
+                typer.echo("Frontend build failed.", err=True)
+                raise typer.Exit(1)
+            typer.echo("Frontend build complete.")
 
     typer.echo(f"Starting pressroom API on http://{host}:{port}")
     uvicorn.run(create_app(), host=host, port=port)

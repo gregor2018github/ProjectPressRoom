@@ -169,6 +169,8 @@ pressroom daemon
 
 ### 5. Run the API and frontend
 
+**Development** (two terminals, hot-reload):
+
 ```bash
 # Terminal 1
 pressroom serve          # FastAPI on http://localhost:8000
@@ -180,6 +182,39 @@ npm run dev            # Vite dev server on http://localhost:5173
 ```
 
 The frontend talks to the API via a configurable base URL (`VITE_API_BASE_URL`, defaults to `http://localhost:8000`).
+
+---
+
+## Production run
+
+Single command — builds the frontend and serves everything from one process on port 8000:
+
+```bash
+# From the repo root
+cd frontend && npm install && cd ../backend
+
+# Build and serve in one step
+pressroom db init
+pressroom sources sync
+pressroom serve --build-frontend
+```
+
+Or build separately and then serve:
+
+```bash
+cd frontend && npm run build && cd ../backend
+pressroom serve          # http://localhost:8000 serves API + UI
+```
+
+The built UI lives at `frontend/dist/` and is mounted at `/` by FastAPI's StaticFiles. All `/api/*` routes remain available alongside it. Unknown paths fall back to `index.html` so the React router handles client-side navigation.
+
+### Database backup
+
+```bash
+pressroom db backup data/pressroom_backup.sqlite
+```
+
+Uses SQLite's online-backup API — safe to run while the daemon is fetching.
 
 ---
 
