@@ -182,6 +182,36 @@ class Repository:
         row = self._conn.execute("SELECT COUNT(*) FROM articles").fetchone()
         return int(row[0])
 
+    def get_stats(self) -> dict[str, object]:
+        """Return aggregate database statistics."""
+        row = self._conn.execute(
+            """
+            SELECT
+                COUNT(*)                          AS articles_total,
+                SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) AS articles_unread,
+                SUM(CASE WHEN is_starred = 1 THEN 1 ELSE 0 END) AS articles_starred,
+                MIN(fetched_at)                   AS oldest_fetched_at,
+                MAX(fetched_at)                   AS newest_fetched_at
+            FROM articles
+            """
+        ).fetchone()
+        sources_row = self._conn.execute(
+            "SELECT COUNT(*) AS total, SUM(is_active) AS active FROM sources"
+        ).fetchone()
+        runs_row = self._conn.execute(
+            "SELECT COUNT(*) FROM fetch_runs"
+        ).fetchone()
+        return {
+            "articles_total": int(row["articles_total"] or 0),
+            "articles_unread": int(row["articles_unread"] or 0),
+            "articles_starred": int(row["articles_starred"] or 0),
+            "oldest_fetched_at": row["oldest_fetched_at"],
+            "newest_fetched_at": row["newest_fetched_at"],
+            "sources_total": int(sources_row["total"] or 0),
+            "sources_active": int(sources_row["active"] or 0),
+            "fetch_runs_total": int(runs_row[0] or 0),
+        }
+
     def insert_article(self, article: Article) -> InsertResult:
         """Insert *article*; return NEW or DUPLICATE on constraint violation.
 

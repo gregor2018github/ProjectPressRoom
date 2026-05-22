@@ -93,7 +93,20 @@ export interface Health {
 // API functions
 // ---------------------------------------------------------------------------
 
+export interface DbStats {
+  articles_total: number
+  articles_unread: number
+  articles_starred: number
+  oldest_fetched_at: string | null
+  newest_fetched_at: string | null
+  sources_total: number
+  sources_active: number
+  fetch_runs_total: number
+  db_size_bytes: number
+}
+
 export const getHealth = () => req<Health>('/api/health')
+export const getStats = () => req<DbStats>('/api/stats')
 
 export interface SyncResult {
   synced: number

@@ -38,6 +38,11 @@ def create_app() -> FastAPI:
     def health(repo: Repository = Depends(get_repo)) -> dict[str, object]:
         return {"status": "ok", "articles": repo.count_articles()}
 
+    @app.get("/api/stats", tags=["meta"])
+    def stats(repo: Repository = Depends(get_repo)) -> dict[str, object]:
+        db_size = settings.db_path.stat().st_size if settings.db_path.exists() else 0
+        return {**repo.get_stats(), "db_size_bytes": db_size}
+
     @app.post("/api/shutdown", tags=["meta"])
     def shutdown() -> dict[str, str]:
         """Shut down the server process after sending the response."""
