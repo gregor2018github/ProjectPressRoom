@@ -8,7 +8,25 @@ import SearchPage from './pages/SearchPage'
 import SetupPage from './pages/SetupPage'
 import SourcesPage from './pages/SourcesPage'
 
-function MainMenu() {
+type Theme = 'light' | 'dark'
+
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = localStorage.getItem('pressroom-theme')
+    if (stored === 'light' || stored === 'dark') return stored
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('pressroom-theme', theme)
+  }, [theme])
+
+  const toggle = () => setTheme(t => (t === 'light' ? 'dark' : 'light'))
+  return [theme, toggle]
+}
+
+function MainMenu({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -40,7 +58,19 @@ function MainMenu() {
       {open && (
         <ul className={styles.dropdown}>
           <li>
-            <button className={`${styles.dropItem} ${styles.danger}`} onClick={() => void handleShutdown()}>
+            <button
+              className={styles.dropItem}
+              onClick={() => { onToggleTheme(); setOpen(false) }}
+            >
+              {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
+            </button>
+          </li>
+          <li className={styles.dropDivider} />
+          <li>
+            <button
+              className={`${styles.dropItem} ${styles.danger}`}
+              onClick={() => void handleShutdown()}
+            >
               Close application
             </button>
           </li>
@@ -50,7 +80,15 @@ function MainMenu() {
   )
 }
 
-function Nav({ health }: { health: Health | null }) {
+function Nav({
+  health,
+  theme,
+  onToggleTheme,
+}: {
+  health: Health | null
+  theme: Theme
+  onToggleTheme: () => void
+}) {
   return (
     <header className={styles.header}>
       <span className={styles.brand}>Pressroom</span>
@@ -71,13 +109,14 @@ function Nav({ health }: { health: Health | null }) {
       {health !== null && (
         <span className={styles.pill}>{health.articles.toLocaleString()} articles</span>
       )}
-      <MainMenu />
+      <MainMenu theme={theme} onToggleTheme={onToggleTheme} />
     </header>
   )
 }
 
 function AppShell() {
   const [health, setHealth] = useState<Health | null>(null)
+  const [theme, toggleTheme] = useTheme()
   const location = useLocation()
 
   useEffect(() => {
@@ -88,7 +127,7 @@ function AppShell() {
 
   return (
     <>
-      <Nav health={health} />
+      <Nav health={health} theme={theme} onToggleTheme={toggleTheme} />
       <main className={styles.main}>
         <Routes>
           <Route path="/" element={<InboxPage />} />

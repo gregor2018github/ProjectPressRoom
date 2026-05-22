@@ -84,22 +84,22 @@
 }
 
 .badge.ok {
-  background: #dcfce7;
+  background: var(--badge-ok-bg);
   color: var(--ok);
 }
 
 .badge.error {
-  background: #fee2e2;
+  background: var(--badge-error-bg);
   color: var(--error);
 }
 
 .badge.not_modified {
-  background: #e0f2fe;
+  background: var(--badge-info-bg);
   color: var(--info);
 }
 
 .badge.running {
-  background: #fef9c3;
+  background: var(--badge-warning-bg);
   color: var(--warning);
 }
 

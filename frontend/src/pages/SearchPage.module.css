@@ -113,7 +113,7 @@
 }
 
 .snippet :global(mark) {
-  background: #fef08a;
+  background: var(--mark-bg);
   color: var(--text);
   border-radius: 2px;
   padding: 0 1px;
