@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { type ArticleSearchHit, searchArticles, patchArticle, formatDate } from '../api/client'
+import { type ArticleSearchHit, type Source, searchArticles, getSources, patchArticle, formatDate } from '../api/client'
 import styles from './SearchPage.module.css'
+
+const SEARCH_LIMIT = 50
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -13,6 +15,13 @@ export default function SearchPage() {
   const [results, setResults] = useState<ArticleSearchHit[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [sourceMap, setSourceMap] = useState<Map<number, string>>(new Map())
+
+  useEffect(() => {
+    getSources()
+      .then(sources => setSourceMap(new Map(sources.map((s: Source) => [s.id, s.name]))))
+      .catch(() => undefined)
+  }, [])
 
   useEffect(() => {
     if (!q) {
@@ -22,7 +31,7 @@ export default function SearchPage() {
     }
     setLoading(true)
     setSearched(true)
-    searchArticles(q)
+    searchArticles(q, SEARCH_LIMIT)
       .then(setResults)
       .catch(() => setResults([]))
       .finally(() => setLoading(false))
@@ -75,7 +84,11 @@ export default function SearchPage() {
 
       {!loading && results.length > 0 && (
         <>
-          <p className={styles.count}>{results.length} result{results.length !== 1 ? 's' : ''}</p>
+          <p className={styles.count}>
+            {results.length === SEARCH_LIMIT
+              ? `Showing first ${SEARCH_LIMIT} results for "${q}"`
+              : `${results.length} result${results.length !== 1 ? 's' : ''} for "${q}"`}
+          </p>
           <div className={styles.list}>
             {results.map(hit => (
               <div
@@ -88,6 +101,9 @@ export default function SearchPage() {
               >
                 <div className={styles.hitBody}>
                   <div className={styles.hitMeta}>
+                    {sourceMap.get(hit.source_id) && (
+                      <span className={styles.hitSource}>{sourceMap.get(hit.source_id)}</span>
+                    )}
                     {hit.published_at && (
                       <span className={styles.hitDate}>{formatDate(hit.published_at)}</span>
                     )}

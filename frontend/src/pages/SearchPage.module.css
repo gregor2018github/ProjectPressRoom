@@ -89,9 +89,25 @@
 }
 
 .hitMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.78rem;
   color: var(--text-muted);
   margin-bottom: 0.2rem;
+}
+
+.hitSource {
+  background: var(--border);
+  color: var(--text-muted);
+  padding: 0.05rem 0.45rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hitDate {
