@@ -145,8 +145,21 @@ export const getArticles = (filters: ArticleFilters = {}) => {
 
 export const getArticle = (id: number) => req<Article>(`/api/articles/${id}`)
 
-export const searchArticles = (q: string, limit = 50) =>
-  req<ArticleSearchHit[]>(`/api/articles/search?q=${encodeURIComponent(q)}&limit=${limit}`)
+export interface SearchFilters {
+  source_id?: number
+  author?: string
+  from_date?: string
+  to_date?: string
+}
+
+export const searchArticles = (q: string, limit = 50, filters: SearchFilters = {}) => {
+  const p = new URLSearchParams({ q, limit: String(limit) })
+  if (filters.source_id !== undefined) p.set('source_id', String(filters.source_id))
+  if (filters.author) p.set('author', filters.author)
+  if (filters.from_date) p.set('from_date', filters.from_date)
+  if (filters.to_date) p.set('to_date', filters.to_date)
+  return req<ArticleSearchHit[]>(`/api/articles/search?${p}`)
+}
 
 export const patchArticle = (id: number, body: { is_read?: boolean; is_starred?: boolean }) =>
   req<Article>(`/api/articles/${id}`, { method: 'PATCH', ...json(body) })

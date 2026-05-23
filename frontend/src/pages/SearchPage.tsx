@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { type ArticleSearchHit, type Source, searchArticles, getSources, patchArticle, formatDate } from '../api/client'
+import {
+  type ArticleSearchHit,
+  type SearchFilters,
+  type Source,
+  searchArticles,
+  getSources,
+  patchArticle,
+  formatDate,
+} from '../api/client'
 import styles from './SearchPage.module.css'
 
 const SEARCH_LIMIT = 50
@@ -16,10 +24,23 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [sourceMap, setSourceMap] = useState<Map<number, string>>(new Map())
+  const [sources, setSources] = useState<Source[]>([])
+  const [showFilters, setShowFilters] = useState(false)
+
+  // Filter state — read from URL
+  const srcParam = searchParams.get('src')
+  const authorParam = searchParams.get('author') ?? ''
+  const fromParam = searchParams.get('from') ?? ''
+  const toParam = searchParams.get('to') ?? ''
+
+  const activeFilterCount = [srcParam, authorParam, fromParam, toParam].filter(Boolean).length
 
   useEffect(() => {
     getSources()
-      .then(sources => setSourceMap(new Map(sources.map((s: Source) => [s.id, s.name]))))
+      .then(list => {
+        setSources(list)
+        setSourceMap(new Map(list.map((s: Source) => [s.id, s.name])))
+      })
       .catch(() => undefined)
   }, [])
 
@@ -31,17 +52,45 @@ export default function SearchPage() {
     }
     setLoading(true)
     setSearched(true)
-    searchArticles(q, SEARCH_LIMIT)
+    const filters: SearchFilters = {}
+    if (srcParam) filters.source_id = Number(srcParam)
+    if (authorParam) filters.author = authorParam
+    if (fromParam) filters.from_date = fromParam
+    if (toParam) filters.to_date = toParam
+    searchArticles(q, SEARCH_LIMIT, filters)
       .then(setResults)
       .catch(() => setResults([]))
       .finally(() => setLoading(false))
-  }, [q])
+  }, [q, srcParam, authorParam, fromParam, toParam])
+
+  const buildParams = (overrides: Record<string, string>) => {
+    const base: Record<string, string> = {}
+    if (inputValue.trim()) base.q = inputValue.trim()
+    if (srcParam) base.src = srcParam
+    if (authorParam) base.author = authorParam
+    if (fromParam) base.from = fromParam
+    if (toParam) base.to = toParam
+    return { ...base, ...overrides }
+  }
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = inputValue.trim()
     if (!trimmed) return
-    setSearchParams({ q: trimmed })
+    setSearchParams(buildParams({ q: trimmed }))
+  }
+
+  const setFilter = (key: string, value: string) => {
+    const params = buildParams({})
+    if (value) params[key] = value
+    else delete params[key]
+    setSearchParams(params)
+  }
+
+  const clearFilters = () => {
+    const params: Record<string, string> = {}
+    if (q) params.q = q
+    setSearchParams(params)
   }
 
   const handleClick = async (hit: ArticleSearchHit) => {
@@ -74,7 +123,69 @@ export default function SearchPage() {
         <button className={styles.btn} type="submit" disabled={!inputValue.trim()}>
           Search
         </button>
+        <button
+          type="button"
+          className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ''}`}
+          onClick={() => setShowFilters(v => !v)}
+        >
+          Filters{activeFilterCount > 0 && <span className={styles.filterBadge}>{activeFilterCount}</span>}
+        </button>
       </form>
+
+      {showFilters && (
+        <div className={styles.filterBar}>
+          <label className={styles.filterField}>
+            <span className={styles.filterLabel}>Source</span>
+            <select
+              className={styles.filterSelect}
+              value={srcParam ?? ''}
+              onChange={e => setFilter('src', e.target.value)}
+            >
+              <option value="">All sources</option>
+              {sources.map(s => (
+                <option key={s.id} value={String(s.id)}>{s.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className={styles.filterField}>
+            <span className={styles.filterLabel}>Author</span>
+            <input
+              className={styles.filterInput}
+              type="text"
+              placeholder="Any author"
+              value={authorParam}
+              onChange={e => setFilter('author', e.target.value)}
+            />
+          </label>
+
+          <label className={styles.filterField}>
+            <span className={styles.filterLabel}>From</span>
+            <input
+              className={styles.filterInput}
+              type="date"
+              value={fromParam}
+              onChange={e => setFilter('from', e.target.value)}
+            />
+          </label>
+
+          <label className={styles.filterField}>
+            <span className={styles.filterLabel}>To</span>
+            <input
+              className={styles.filterInput}
+              type="date"
+              value={toParam}
+              onChange={e => setFilter('to', e.target.value)}
+            />
+          </label>
+
+          {activeFilterCount > 0 && (
+            <button type="button" className={styles.clearBtn} onClick={clearFilters}>
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
 
       {loading && <p className={styles.state}>Searching…</p>}
 
@@ -88,6 +199,7 @@ export default function SearchPage() {
             {results.length === SEARCH_LIMIT
               ? `Showing first ${SEARCH_LIMIT} results for "${q}"`
               : `${results.length} result${results.length !== 1 ? 's' : ''} for "${q}"`}
+            {activeFilterCount > 0 && <span className={styles.filterNote}> · {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>}
           </p>
           <div className={styles.list}>
             {results.map(hit => (
@@ -106,6 +218,9 @@ export default function SearchPage() {
                     )}
                     {hit.published_at && (
                       <span className={styles.hitDate}>{formatDate(hit.published_at)}</span>
+                    )}
+                    {hit.author && (
+                      <span className={styles.hitAuthor}>{hit.author}</span>
                     )}
                   </div>
                   <h3 className={styles.hitTitle}>{hit.title}</h3>

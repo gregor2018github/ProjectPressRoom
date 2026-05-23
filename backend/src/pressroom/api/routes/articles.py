@@ -70,10 +70,21 @@ def list_articles(
 def search_articles(
     q: Annotated[str, Query(min_length=1)],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    source_id: Annotated[int | None, Query()] = None,
+    author: Annotated[str | None, Query()] = None,
+    from_date: Annotated[datetime | None, Query()] = None,
+    to_date: Annotated[datetime | None, Query()] = None,
     repo: Repository = Depends(get_repo),
 ) -> list[ArticleSearchHit]:
     """Full-text search; results include a ``snippet`` with highlighted matches."""
-    hits = repo.search_articles(q, limit=limit)
+    hits = repo.search_articles(
+        q,
+        limit=limit,
+        source_id=source_id,
+        author=author,
+        from_date=from_date,
+        to_date=to_date,
+    )
     return [
         ArticleSearchHit.model_validate({**article.model_dump(), "snippet": snippet})
         for article, snippet in hits

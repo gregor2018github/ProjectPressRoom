@@ -312,10 +312,20 @@ class Repository:
         ).fetchone()
         return _to_article(row) if row is not None else None
 
-    def search_articles(self, query: str, limit: int = 50) -> list[tuple[Article, str]]:
+    def search_articles(
+        self,
+        query: str,
+        limit: int = 50,
+        *,
+        source_id: int | None = None,
+        author: str | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
+    ) -> list[tuple[Article, str]]:
         """Full-text search using FTS5; returns ``(article, snippet)`` pairs.
 
         The snippet highlights matched terms with ``<mark>...</mark>``.
+        Optional filters narrow results after FTS ranking.
         Returns an empty list when *query* is invalid FTS5 syntax.
         """
         try:
@@ -325,11 +335,22 @@ class Repository:
                        snippet(articles_fts, 2, '<mark>', '</mark>', '…', 20) AS fts_snippet
                 FROM   articles_fts
                 JOIN   articles a ON articles_fts.rowid = a.id
-                WHERE  articles_fts MATCH ?
+                WHERE  articles_fts MATCH :query
+                  AND  (:source_id IS NULL OR a.source_id    = :source_id)
+                  AND  (:author    IS NULL OR a.author       = :author)
+                  AND  (:from_date IS NULL OR a.published_at >= :from_date)
+                  AND  (:to_date   IS NULL OR a.published_at <= :to_date)
                 ORDER  BY rank
-                LIMIT  ?
+                LIMIT  :limit
                 """,
-                (query, limit),
+                {
+                    "query": query,
+                    "source_id": source_id,
+                    "author": author,
+                    "from_date": from_date.isoformat() if from_date else None,
+                    "to_date": to_date.isoformat() if to_date else None,
+                    "limit": limit,
+                },
             ).fetchall()
         except sqlite3.OperationalError:
             return []
