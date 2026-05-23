@@ -312,6 +312,17 @@ class Repository:
         ).fetchone()
         return _to_article(row) if row is not None else None
 
+    @staticmethod
+    def _to_prefix_query(query: str) -> str:
+        """Append * to each token so FTS5 matches prefixes, not only whole words.
+
+        Skips transformation when the user already uses FTS5 syntax (*, ").
+        """
+        if '"' in query or "*" in query:
+            return query
+        tokens = query.strip().split()
+        return " ".join(f"{t}*" for t in tokens if t)
+
     def search_articles(
         self,
         query: str,
@@ -328,6 +339,8 @@ class Repository:
         Optional filters narrow results after FTS ranking.
         Returns an empty list when *query* is invalid FTS5 syntax.
         """
+        fts_query = self._to_prefix_query(query)
+        author_like = f"%{author}%" if author else None
         try:
             rows = self._conn.execute(
                 """
@@ -336,17 +349,17 @@ class Repository:
                 FROM   articles_fts
                 JOIN   articles a ON articles_fts.rowid = a.id
                 WHERE  articles_fts MATCH :query
-                  AND  (:source_id IS NULL OR a.source_id    = :source_id)
-                  AND  (:author    IS NULL OR a.author       = :author)
-                  AND  (:from_date IS NULL OR a.published_at >= :from_date)
-                  AND  (:to_date   IS NULL OR a.published_at <= :to_date)
+                  AND  (:source_id   IS NULL OR a.source_id    = :source_id)
+                  AND  (:author_like IS NULL OR a.author LIKE :author_like)
+                  AND  (:from_date   IS NULL OR a.published_at >= :from_date)
+                  AND  (:to_date     IS NULL OR a.published_at <= :to_date)
                 ORDER  BY rank
                 LIMIT  :limit
                 """,
                 {
-                    "query": query,
+                    "query": fts_query,
                     "source_id": source_id,
-                    "author": author,
+                    "author_like": author_like,
                     "from_date": from_date.isoformat() if from_date else None,
                     "to_date": to_date.isoformat() if to_date else None,
                     "limit": limit,
