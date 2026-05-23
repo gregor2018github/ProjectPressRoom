@@ -160,7 +160,7 @@ def test_fetch_run_recorded_on_error(repo: Repository) -> None:
 
 
 @pytest.mark.parametrize("query,expected_count", [
-    ("vollständige", 1),   # German word from gamestar body
+    ("vollständige", 2),   # prefix matches both "vollständige" and "vollständigen" in fixture
     ("Summary", 2),        # "Summary" in both summary_only titles
 ])
 def test_fts_search_after_fetch(query: str, expected_count: int, repo: Repository) -> None:

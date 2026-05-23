@@ -54,7 +54,7 @@ CREATE VIRTUAL TABLE articles_fts USING fts5 (
     title, summary, body_text,
     content='articles',
     content_rowid='id',
-    tokenize='unicode61 remove_diacritics 2'
+    tokenize='unicode61 remove_diacritics 0'
 );
 
 -- Keep FTS in sync via triggers.
