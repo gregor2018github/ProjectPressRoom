@@ -46,10 +46,12 @@ def create_app() -> FastAPI:
     @app.post("/api/shutdown", tags=["meta"])
     def shutdown() -> dict[str, str]:
         """Shut down the server process after sending the response."""
-        import sys
+        import os
         import threading
 
-        threading.Thread(target=lambda: (__import__("time").sleep(0.3), sys.exit(0)), daemon=True).start()
+        # os._exit bypasses Python cleanup and actually kills the process;
+        # sys.exit() in a non-main thread only raises SystemExit in that thread.
+        threading.Thread(target=lambda: (__import__("time").sleep(0.3), os._exit(0)), daemon=True).start()
         return {"status": "shutting down"}
 
     app.include_router(sources.router, prefix="/api")
