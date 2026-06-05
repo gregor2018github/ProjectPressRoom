@@ -57,6 +57,7 @@ export interface Article {
   content_hash: string
   is_read: boolean
   is_starred: boolean
+  source_name: string | null
 }
 
 export interface ArticleSearchHit extends Article {

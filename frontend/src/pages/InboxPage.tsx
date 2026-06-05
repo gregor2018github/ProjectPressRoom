@@ -30,9 +30,7 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getSources()
-      .then(setSources)
-      .catch(() => undefined)
+    getSources().then(setSources).catch(() => undefined)
   }, [])
 
   const load = useCallback(() => {
@@ -97,7 +95,6 @@ export default function InboxPage() {
     }
   }
 
-  const sourceMap = Object.fromEntries(sources.map(s => [s.id, s.name]))
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
@@ -169,7 +166,7 @@ export default function InboxPage() {
               <ArticleRow
                 key={a.id}
                 article={a}
-                sourceName={a.source_id != null ? sourceMap[a.source_id] : undefined}
+                sourceName={a.source_name ?? undefined}
                 onClick={() => void handleClick(a)}
                 onStar={starred => void handleStar(a, starred)}
               />

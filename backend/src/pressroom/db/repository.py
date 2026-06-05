@@ -285,21 +285,27 @@ class Repository:
         }
 
         where = """
-            WHERE (:source_id   IS NULL OR source_id   = :source_id)
-              AND (:language     IS NULL OR language    = :language)
-              AND (:from_date    IS NULL OR published_at >= :from_date)
-              AND (:to_date      IS NULL OR published_at <= :to_date)
-              AND (:is_read      IS NULL OR is_read      = :is_read)
-              AND (:is_starred   IS NULL OR is_starred   = :is_starred)
+            WHERE (:source_id   IS NULL OR a.source_id   = :source_id)
+              AND (:language     IS NULL OR a.language    = :language)
+              AND (:from_date    IS NULL OR a.published_at >= :from_date)
+              AND (:to_date      IS NULL OR a.published_at <= :to_date)
+              AND (:is_read      IS NULL OR a.is_read      = :is_read)
+              AND (:is_starred   IS NULL OR a.is_starred   = :is_starred)
         """
 
         total_row = self._conn.execute(
-            f"SELECT COUNT(*) FROM articles {where}", params
+            f"SELECT COUNT(*) FROM articles a {where}", params
         ).fetchone()
         total = int(total_row[0])
 
         rows = self._conn.execute(
-            f"SELECT * FROM articles {where} ORDER BY published_at DESC LIMIT :limit OFFSET :offset",
+            f"""
+            SELECT a.*, s.name AS source_name
+            FROM articles a
+            LEFT JOIN sources s ON s.id = a.source_id
+            {where}
+            ORDER BY a.published_at DESC LIMIT :limit OFFSET :offset
+            """,
             {**params, "limit": page_size, "offset": (page - 1) * page_size},
         ).fetchall()
 
@@ -308,7 +314,13 @@ class Repository:
     def get_article_by_id(self, article_id: int) -> Article | None:
         """Return the article with *article_id*, or None if not found."""
         row = self._conn.execute(
-            "SELECT * FROM articles WHERE id = ?", (article_id,)
+            """
+            SELECT a.*, s.name AS source_name
+            FROM articles a
+            LEFT JOIN sources s ON s.id = a.source_id
+            WHERE a.id = ?
+            """,
+            (article_id,),
         ).fetchone()
         return _to_article(row) if row is not None else None
 

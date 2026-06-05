@@ -61,6 +61,7 @@ export default function ArticlePage() {
       <h1 className={styles.title}>{article.title}</h1>
 
       <div className={styles.meta}>
+        {article.source_name && <span className={styles.source}>{article.source_name}</span>}
         {article.author && <span>{article.author}</span>}
         {article.published_at && <span>{formatDate(article.published_at)}</span>}
         {article.url && (

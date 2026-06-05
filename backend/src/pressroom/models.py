@@ -139,6 +139,7 @@ class Article(BaseModel):
     )
     is_read: bool = Field(default=False, description="True once the user has opened the article.")
     is_starred: bool = Field(default=False, description="User-set bookmark flag.")
+    source_name: str | None = Field(default=None, description="Denormalised source name, populated by API read queries.")
 
 
 class FetchedEntry(BaseModel):

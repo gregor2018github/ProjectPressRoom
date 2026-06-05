@@ -67,6 +67,11 @@
   margin-bottom: 1rem;
 }
 
+.source {
+  font-weight: 600;
+  color: var(--primary);
+}
+
 .externalLink {
   color: var(--primary);
   text-decoration: none;
