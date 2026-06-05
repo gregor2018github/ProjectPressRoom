@@ -7,11 +7,10 @@ the venv Python automatically — no manual activation required.
 """
 import argparse
 import os
+import shutil
 import subprocess
 import sys
-import threading
-import time
-import webbrowser
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -55,12 +54,71 @@ def _build_frontend() -> None:
     print("Frontend build complete.")
 
 
-def _open_browser(url: str, delay: float = 2.0) -> None:
-    def _open() -> None:
-        time.sleep(delay)
-        webbrowser.open(url)
+def _find_chromium_exe() -> Path | None:
+    """Return a path to Edge or Chrome, or None if neither is found."""
+    if sys.platform == "win32":
+        candidates = [
+            Path(os.environ.get("PROGRAMFILES(X86)", ""), "Microsoft/Edge/Application/msedge.exe"),
+            Path(os.environ.get("PROGRAMFILES", ""),       "Microsoft/Edge/Application/msedge.exe"),
+            Path(os.environ.get("PROGRAMFILES", ""),       "Google/Chrome/Application/chrome.exe"),
+            Path(os.environ.get("PROGRAMFILES(X86)", ""), "Google/Chrome/Application/chrome.exe"),
+            Path(os.environ.get("LOCALAPPDATA", ""),       "Google/Chrome/Application/chrome.exe"),
+        ]
+        return next((p for p in candidates if p.exists()), None)
+    else:
+        for cmd in ("google-chrome", "chromium-browser", "chromium", "microsoft-edge"):
+            found = shutil.which(cmd)
+            if found:
+                return Path(found)
+        return None
 
-    threading.Thread(target=_open, daemon=True).start()
+
+def _launch_browser(url: str) -> "subprocess.Popen[bytes] | None":
+    """
+    Open the app in a dedicated browser process that main.py can terminate.
+
+    Uses a temporary profile directory so the instance is fully isolated from
+    the user's main browser.  Returns the Popen handle, or None when falling
+    back to webbrowser.open() (no Chromium-based browser found).
+    """
+    exe = _find_chromium_exe()
+    if exe is None:
+        import webbrowser
+        webbrowser.open(url)
+        return None
+
+    tmp_dir = tempfile.mkdtemp(prefix="pressroom_browser_")
+    proc = subprocess.Popen(
+        [
+            str(exe),
+            f"--user-data-dir={tmp_dir}",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--new-window",
+            url,
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    import atexit
+    atexit.register(shutil.rmtree, tmp_dir, True)
+    return proc
+
+
+def _kill_browser(proc: "subprocess.Popen[bytes]") -> None:
+    """Terminate the browser process tree."""
+    if proc.poll() is not None:
+        return  # Already exited (e.g. user closed it manually)
+    if sys.platform == "win32":
+        # /T kills the whole process tree (GPU, renderer, … children)
+        subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    else:
+        proc.terminate()
 
 
 def _init_db() -> None:
@@ -101,15 +159,21 @@ def main() -> None:
     _init_db()
 
     url = f"http://{args.host}:{args.port}"
+
+    browser_proc: "subprocess.Popen[bytes] | None" = None
     if not args.no_browser:
-        _open_browser(url)
+        browser_proc = _launch_browser(url)
 
     import uvicorn
     from pressroom.api.app import create_app
 
     print(f"\nStarting Pressroom at {url}")
     print("Press Ctrl-C to stop.\n")
-    uvicorn.run(create_app(), host=args.host, port=args.port)
+    try:
+        uvicorn.run(create_app(), host=args.host, port=args.port)
+    finally:
+        if browser_proc is not None:
+            _kill_browser(browser_proc)
 
 
 if __name__ == "__main__":

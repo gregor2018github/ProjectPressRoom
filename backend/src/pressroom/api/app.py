@@ -46,12 +46,16 @@ def create_app() -> FastAPI:
     @app.post("/api/shutdown", tags=["meta"])
     def shutdown() -> dict[str, str]:
         """Shut down the server process after sending the response."""
-        import os
+        import signal
         import threading
 
-        # os._exit bypasses Python cleanup and actually kills the process;
-        # sys.exit() in a non-main thread only raises SystemExit in that thread.
-        threading.Thread(target=lambda: (__import__("time").sleep(0.3), os._exit(0)), daemon=True).start()
+        # Raise SIGINT in the main thread after the response is sent.
+        # This lets uvicorn shut down gracefully so callers (e.g. main.py)
+        # can run their finally-block cleanup (closing the browser, etc.).
+        threading.Thread(
+            target=lambda: (__import__("time").sleep(0.3), signal.raise_signal(signal.SIGINT)),
+            daemon=True,
+        ).start()
         return {"status": "shutting down"}
 
     app.include_router(sources.router, prefix="/api")
