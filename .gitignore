@@ -25,6 +25,9 @@ htmlcov/
 data/*.sqlite
 data/*.sqlite-wal
 data/*.sqlite-shm
+backend/data/*.sqlite
+backend/data/*.sqlite-wal
+backend/data/*.sqlite-shm
 
 # Frontend
 frontend/node_modules/
