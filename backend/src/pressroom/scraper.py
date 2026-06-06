@@ -1,5 +1,7 @@
 """Fetch a URL and extract the main article body using trafilatura."""
 
+import lxml.etree
+import lxml.html
 import nh3
 import httpx
 import trafilatura
@@ -33,6 +35,72 @@ _ALLOWED_ATTRS: dict[str, set[str]] = {
     "th": {"colspan", "rowspan"},
 }
 
+# Stable CSS class names that reliably wrap article body text across CMSes.
+# Checked first; if any match, only that subtree is fed to trafilatura.
+_CONTENT_CLASSES = [
+    "StoryContent",       # Heise bestenlisten / review pages
+    "article-body",
+    "article__body",
+    "article-content",
+    "entry-content",
+    "post-content",
+    "story-body",
+    "js-article-content",
+]
+
+# Tag names and class-name substrings whose elements are pure navigation noise.
+_NOISE_TAGS = frozenset({"nav", "aside", "header", "footer"})
+_NOISE_CLASSES = frozenset({
+    "sidebar", "navigation", "related", "recommended",
+    "trending", "popular", "advertisement", "banner",
+    "linkOverlay", "linkWrapper",
+})
+
+
+def _preprocess_html(html: str) -> str:
+    """Isolate article content before trafilatura runs.
+
+    Strategy:
+    1. If a known stable content-container class is present, return only
+       that subtree wrapped in a minimal HTML document.
+    2. Otherwise strip nav/aside/sidebar noise from the full document.
+
+    Falls back to the original HTML on any lxml error.
+    """
+    try:
+        tree = lxml.html.document_fromstring(html)
+
+        # --- strategy 1: extract known content container ---
+        for cls in _CONTENT_CLASSES:
+            matches = tree.find_class(cls)
+            if matches:
+                fragment = lxml.etree.tostring(matches[0], encoding="unicode", method="html")
+                return f"<html><body>{fragment}</body></html>"
+
+        # --- strategy 2: strip known noise elements ---
+        to_remove: list[lxml.html.HtmlElement] = []
+        for el in tree.iter():
+            if not isinstance(el.tag, str):
+                continue
+            if el.tag in _NOISE_TAGS:
+                to_remove.append(el)
+                continue
+            classes = set((el.get("class") or "").split())
+            if classes & _NOISE_CLASSES:
+                to_remove.append(el)
+
+        for el in to_remove:
+            parent = el.getparent()
+            if parent is not None:
+                try:
+                    parent.remove(el)
+                except ValueError:
+                    pass
+
+        return lxml.etree.tostring(tree, encoding="unicode", method="html")
+    except Exception:  # lxml may raise on severely malformed HTML
+        return html
+
 
 def scrape_article(
     url: str, timeout: float = 20.0
@@ -56,9 +124,11 @@ def scrape_article(
     except httpx.RequestError as exc:
         return None, None, str(exc)
 
+    clean_html = _preprocess_html(html)
+
     # Plain-text extraction (most reliable baseline)
     scraped_text: str | None = trafilatura.extract(
-        html,
+        clean_html,
         include_comments=False,
         include_tables=True,
         no_fallback=False,
@@ -71,7 +141,7 @@ def scrape_article(
     scraped_html: str | None = None
     try:
         raw_html: str | None = trafilatura.extract(
-            html,
+            clean_html,
             output_format="html",
             include_comments=False,
             include_tables=True,
