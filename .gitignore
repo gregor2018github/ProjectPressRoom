@@ -29,6 +29,9 @@ backend/data/*.sqlite
 backend/data/*.sqlite-wal
 backend/data/*.sqlite-shm
 
+# Persistent browser profile (created by main.py for app window isolation)
+backend/data/browser_profile/
+
 # Frontend
 frontend/node_modules/
 frontend/dist/
