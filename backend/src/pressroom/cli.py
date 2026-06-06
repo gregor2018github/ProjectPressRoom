@@ -29,6 +29,82 @@ def _main() -> None:
 # ---------------------------------------------------------------------------
 
 
+@db_app.command("repair-summaries")
+def db_repair_summaries(
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Print what would change without writing anything."),
+    ] = False,
+) -> None:
+    """Fix articles whose summary was stored as raw HTML (e.g. Gamestar feeds).
+
+    Strips HTML tags from the summary field to produce clean plain text.
+    When body_html is also empty the HTML is promoted to the body fields
+    so the content is not lost.  The FTS index is updated automatically.
+    """
+    import html as _html
+    import re
+
+    from pressroom.config import settings
+    from pressroom.db.connection import get_connection
+    from pressroom.normalize import _sanitize_html, _to_plain_text  # type: ignore[attr-defined]
+
+    def _strip_tags(raw: str) -> str | None:
+        no_tags = re.sub(r"<[^>]+>", " ", raw)
+        plain = " ".join(_html.unescape(no_tags).split())
+        return plain or None
+
+    conn = get_connection(settings.db_path)
+    try:
+        rows = conn.execute(
+            "SELECT id, title, summary, body_html FROM articles WHERE summary LIKE '%<%'"
+        ).fetchall()
+
+        if not rows:
+            typer.echo("No articles with HTML in summary — nothing to do.")
+            return
+
+        typer.echo(f"Found {len(rows)} article(s) with HTML in summary.")
+
+        for row in rows:
+            article_id: int = row["id"]
+            summary_html: str = row["summary"]
+            has_body: bool = bool(row["body_html"])
+            plain = _strip_tags(summary_html)
+
+            if dry_run:
+                action = "summary only" if has_body else "summary + promote to body"
+                typer.echo(f"  #{article_id}  [{action}]  {row['title']!r:.70}")
+                typer.echo(f"    -> {plain!r:.90}")
+                continue
+
+            if has_body:
+                conn.execute(
+                    "UPDATE articles SET summary = ? WHERE id = ?",
+                    (plain, article_id),
+                )
+            else:
+                sanitized = _sanitize_html(summary_html)
+                body_text = _to_plain_text(sanitized) if sanitized else None
+                conn.execute(
+                    """UPDATE articles
+                          SET summary      = ?,
+                              body_html    = ?,
+                              body_text    = ?,
+                              body_html_raw = ?
+                        WHERE id = ?""",
+                    (plain, sanitized, body_text, summary_html, article_id),
+                )
+
+        if dry_run:
+            typer.echo(f"\n[dry-run] Would fix {len(rows)} article(s). Re-run without --dry-run to apply.")
+        else:
+            conn.commit()
+            typer.echo(f"Fixed {len(rows)} article(s).")
+    finally:
+        conn.close()
+
+
 @db_app.command("backup")
 def db_backup(
     dest: Annotated[
