@@ -1,5 +1,6 @@
 """RSS / Atom fetcher adapter built on feedparser + httpx."""
 
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -44,7 +45,22 @@ def _parse_entry(
     external_id: str | None = entry.get("id") or entry.get("guid") or None
 
     summary_raw: Any = entry.get("summary")
-    summary: str | None = str(summary_raw).strip() if summary_raw else None
+    # feedparser sets summary_detail.type='text/html' for all RSS 2.0 <description>
+    # fields regardless of actual content, so the type field is not a reliable signal.
+    # Checking for literal '<' tags is the only robust way to detect HTML summaries.
+    summary_is_html: bool = bool(summary_raw and "<" in str(summary_raw))
+
+    summary: str | None = None
+    html_summary: str | None = None  # HTML from <description>; body_html fallback
+
+    if summary_raw:
+        s = str(summary_raw).strip()
+        if summary_is_html:
+            html_summary = s
+            # Strip tags to produce a clean plain-text teaser for the summary field.
+            summary = " ".join(re.sub(r"<[^>]+>", " ", s).split()) or None
+        else:
+            summary = s or None
 
     # Atom <content> / RSS <content:encoded> lives in entry.content[]
     body_html: str | None = None
@@ -54,6 +70,10 @@ def _parse_entry(
         if first:
             value: Any = first.get("value")
             body_html = str(value) if value else None
+
+    # Promote HTML summary to body when no richer content:encoded is available.
+    if body_html is None:
+        body_html = html_summary
 
     author_raw: Any = entry.get("author")
     author: str | None = str(author_raw).strip() if author_raw else None
