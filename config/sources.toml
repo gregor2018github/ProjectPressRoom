@@ -30,3 +30,10 @@ name = "Heise Online"
 feed_url = "https://www.heise.de/rss/heise-atom.xml"
 category = "tech"
 language = "de"
+
+[[source]]
+name = "MIT Technology Review"
+feed_url = "https://www.technologyreview.com/feed/"
+homepage_url = "https://www.technologyreview.com"
+category = "tech"
+language = "en"
