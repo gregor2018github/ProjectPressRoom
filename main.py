@@ -10,11 +10,11 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).parent
 BACKEND_SRC = ROOT / "backend" / "src"
+BROWSER_PROFILE = ROOT / "backend" / "data" / "browser_profile"
 
 # Cross-platform venv Python path
 _venv = ROOT / "backend" / ".venv"
@@ -87,11 +87,11 @@ def _launch_browser(url: str) -> "subprocess.Popen[bytes] | None":
         webbrowser.open(url)
         return None
 
-    tmp_dir = tempfile.mkdtemp(prefix="pressroom_browser_")
+    BROWSER_PROFILE.mkdir(parents=True, exist_ok=True)
     proc = subprocess.Popen(
         [
             str(exe),
-            f"--user-data-dir={tmp_dir}",
+            f"--user-data-dir={BROWSER_PROFILE}",
             "--no-first-run",
             "--no-default-browser-check",
             "--new-window",
@@ -100,9 +100,6 @@ def _launch_browser(url: str) -> "subprocess.Popen[bytes] | None":
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-
-    import atexit
-    atexit.register(shutil.rmtree, tmp_dir, True)
     return proc
 
 

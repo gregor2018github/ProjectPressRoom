@@ -9,6 +9,8 @@
         var t = localStorage.getItem('pressroom-theme');
         if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', t);
+        var b = localStorage.getItem('pressroom-text-brightness');
+        if (b) document.documentElement.style.setProperty('--text-brightness', b + '%');
       })();
     </script>
   </head>

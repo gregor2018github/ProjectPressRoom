@@ -26,7 +26,31 @@ function useTheme(): [Theme, () => void] {
   return [theme, toggle]
 }
 
-function MainMenu({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () => void }) {
+function useTextBrightness(): [number, (v: number) => void] {
+  const [brightness, setBrightness] = useState<number>(() => {
+    const stored = localStorage.getItem('pressroom-text-brightness')
+    return stored ? Number(stored) : 96
+  })
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--text-brightness', `${brightness}%`)
+    localStorage.setItem('pressroom-text-brightness', String(brightness))
+  }, [brightness])
+
+  return [brightness, setBrightness]
+}
+
+function MainMenu({
+  theme,
+  onToggleTheme,
+  brightness,
+  onBrightnessChange,
+}: {
+  theme: Theme
+  onToggleTheme: () => void
+  brightness: number
+  onBrightnessChange: (v: number) => void
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -65,6 +89,22 @@ function MainMenu({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () =>
               {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
             </button>
           </li>
+          {theme === 'dark' && (
+            <li className={styles.sliderItem}>
+              <div className={styles.sliderHeader}>
+                <span>Text brightness</span>
+                <span className={styles.sliderValue}>{brightness}%</span>
+              </div>
+              <input
+                type="range"
+                min={50}
+                max={100}
+                value={brightness}
+                onChange={e => onBrightnessChange(Number(e.target.value))}
+                className={styles.slider}
+              />
+            </li>
+          )}
           <li className={styles.dropDivider} />
           <li>
             <button
@@ -84,10 +124,14 @@ function Nav({
   health,
   theme,
   onToggleTheme,
+  brightness,
+  onBrightnessChange,
 }: {
   health: Health | null
   theme: Theme
   onToggleTheme: () => void
+  brightness: number
+  onBrightnessChange: (v: number) => void
 }) {
   return (
     <header className={styles.header}>
@@ -109,7 +153,12 @@ function Nav({
       {health !== null && (
         <span className={styles.pill}>{health.articles.toLocaleString()} articles</span>
       )}
-      <MainMenu theme={theme} onToggleTheme={onToggleTheme} />
+      <MainMenu
+        theme={theme}
+        onToggleTheme={onToggleTheme}
+        brightness={brightness}
+        onBrightnessChange={onBrightnessChange}
+      />
     </header>
   )
 }
@@ -117,6 +166,7 @@ function Nav({
 function AppShell() {
   const [health, setHealth] = useState<Health | null>(null)
   const [theme, toggleTheme] = useTheme()
+  const [brightness, setBrightness] = useTextBrightness()
   const location = useLocation()
 
   useEffect(() => {
@@ -127,7 +177,13 @@ function AppShell() {
 
   return (
     <>
-      <Nav health={health} theme={theme} onToggleTheme={toggleTheme} />
+      <Nav
+        health={health}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        brightness={brightness}
+        onBrightnessChange={setBrightness}
+      />
       <main className={styles.main}>
         <Routes>
           <Route path="/" element={<InboxPage />} />

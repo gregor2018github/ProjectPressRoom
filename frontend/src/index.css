@@ -34,7 +34,7 @@
   --border: #334155;
   --primary: #3b82f6;
   --primary-hover: #2563eb;
-  --text: #f1f5f9;
+  --text: hsl(214, 32%, var(--text-brightness, 96%));
   --text-muted: #94a3b8;
   --ok: #22c55e;
   --error: #f87171;
