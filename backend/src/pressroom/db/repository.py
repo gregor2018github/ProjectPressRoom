@@ -324,6 +324,13 @@ class Repository:
         ).fetchone()
         return _to_article(row) if row is not None else None
 
+    def list_authors(self) -> list[str]:
+        """Return all distinct non-null author values, sorted alphabetically."""
+        rows = self._conn.execute(
+            "SELECT DISTINCT author FROM articles WHERE author IS NOT NULL ORDER BY author"
+        ).fetchall()
+        return [str(row[0]) for row in rows]
+
     @staticmethod
     def _to_prefix_query(query: str) -> str:
         """Append * to each token so FTS5 matches prefixes, not only whole words.
@@ -344,6 +351,9 @@ class Repository:
         author: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
+        is_unread: bool = False,
+        is_starred: bool = False,
+        has_scraped: bool = False,
     ) -> list[tuple[Article, str]]:
         """Full-text search using FTS5; returns ``(article, snippet)`` pairs.
 
@@ -351,8 +361,39 @@ class Repository:
         Optional filters narrow results after FTS ranking.
         Returns an empty list when *query* is invalid FTS5 syntax.
         """
-        fts_query = self._to_prefix_query(query)
         author_like = f"%{author}%" if author else None
+
+        if not query.strip():
+            # No text query — use plain SQL with filters only, no FTS.
+            rows = self._conn.execute(
+                """
+                SELECT a.*, s.name AS source_name
+                FROM   articles a
+                LEFT JOIN sources s ON s.id = a.source_id
+                WHERE  (:source_id   IS NULL OR a.source_id    = :source_id)
+                  AND  (:author_like IS NULL OR a.author LIKE :author_like)
+                  AND  (:from_date   IS NULL OR a.published_at >= :from_date)
+                  AND  (:to_date     IS NULL OR a.published_at <= :to_date)
+                  AND  (:is_unread  = 0 OR a.is_read    = 0)
+                  AND  (:is_starred = 0 OR a.is_starred = 1)
+                  AND  (:has_scraped = 0 OR a.scraped_at IS NOT NULL)
+                ORDER BY a.published_at DESC
+                LIMIT :limit
+                """,
+                {
+                    "source_id": source_id,
+                    "author_like": author_like,
+                    "from_date": from_date.isoformat() if from_date else None,
+                    "to_date": to_date.isoformat() if to_date else None,
+                    "is_unread": 1 if is_unread else 0,
+                    "is_starred": 1 if is_starred else 0,
+                    "has_scraped": 1 if has_scraped else 0,
+                    "limit": limit,
+                },
+            ).fetchall()
+            return [(Article.model_validate(dict(row)), "") for row in rows]
+
+        fts_query = self._to_prefix_query(query)
         try:
             rows = self._conn.execute(
                 """
@@ -365,6 +406,9 @@ class Repository:
                   AND  (:author_like IS NULL OR a.author LIKE :author_like)
                   AND  (:from_date   IS NULL OR a.published_at >= :from_date)
                   AND  (:to_date     IS NULL OR a.published_at <= :to_date)
+                  AND  (:is_unread  = 0 OR a.is_read    = 0)
+                  AND  (:is_starred = 0 OR a.is_starred = 1)
+                  AND  (:has_scraped = 0 OR a.scraped_at IS NOT NULL)
                 ORDER  BY rank
                 LIMIT  :limit
                 """,
@@ -374,6 +418,9 @@ class Repository:
                     "author_like": author_like,
                     "from_date": from_date.isoformat() if from_date else None,
                     "to_date": to_date.isoformat() if to_date else None,
+                    "is_unread": 1 if is_unread else 0,
+                    "is_starred": 1 if is_starred else 0,
+                    "has_scraped": 1 if has_scraped else 0,
                     "limit": limit,
                 },
             ).fetchall()

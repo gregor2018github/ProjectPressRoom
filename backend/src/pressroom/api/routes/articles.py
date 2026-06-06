@@ -67,14 +67,23 @@ def list_articles(
     return ArticlePage(items=items, total=total, page=page, page_size=page_size)
 
 
+@router.get("/articles/authors")
+def list_authors(repo: Repository = Depends(get_repo)) -> list[str]:
+    """Return all distinct author names stored in the database."""
+    return repo.list_authors()
+
+
 @router.get("/articles/search")
 def search_articles(
-    q: Annotated[str, Query(min_length=1)],
+    q: Annotated[str, Query()] = "",
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     source_id: Annotated[int | None, Query()] = None,
     author: Annotated[str | None, Query()] = None,
     from_date: Annotated[datetime | None, Query()] = None,
     to_date: Annotated[datetime | None, Query()] = None,
+    is_unread: Annotated[bool, Query()] = False,
+    is_starred: Annotated[bool, Query()] = False,
+    has_scraped: Annotated[bool, Query()] = False,
     repo: Repository = Depends(get_repo),
 ) -> list[ArticleSearchHit]:
     """Full-text search; results include a ``snippet`` with highlighted matches."""
@@ -85,6 +94,9 @@ def search_articles(
         author=author,
         from_date=from_date,
         to_date=to_date,
+        is_unread=is_unread,
+        is_starred=is_starred,
+        has_scraped=has_scraped,
     )
     return [
         ArticleSearchHit.model_validate({**article.model_dump(), "snippet": snippet})

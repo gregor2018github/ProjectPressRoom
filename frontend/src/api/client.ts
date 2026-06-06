@@ -118,6 +118,7 @@ export interface SyncResult {
 }
 
 export const getSources = () => req<Source[]>('/api/sources')
+export const getAuthors = () => req<string[]>('/api/articles/authors')
 
 export const syncSources = () =>
   req<SyncResult>('/api/sources/sync', { method: 'POST' })
@@ -154,14 +155,20 @@ export interface SearchFilters {
   author?: string
   from_date?: string
   to_date?: string
+  is_unread?: boolean
+  is_starred?: boolean
+  has_scraped?: boolean
 }
 
-export const searchArticles = (q: string, limit = 50, filters: SearchFilters = {}) => {
+export const searchArticles = (q: string = '', limit = 50, filters: SearchFilters = {}) => {
   const p = new URLSearchParams({ q, limit: String(limit) })
   if (filters.source_id !== undefined) p.set('source_id', String(filters.source_id))
   if (filters.author) p.set('author', filters.author)
   if (filters.from_date) p.set('from_date', filters.from_date)
   if (filters.to_date) p.set('to_date', filters.to_date)
+  if (filters.is_unread) p.set('is_unread', 'true')
+  if (filters.is_starred) p.set('is_starred', 'true')
+  if (filters.has_scraped) p.set('has_scraped', 'true')
   return req<ArticleSearchHit[]>(`/api/articles/search?${p}`)
 }
 
