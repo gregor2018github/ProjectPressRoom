@@ -48,6 +48,13 @@
   color: var(--text-muted);
 }
 
+.scraped {
+  color: var(--success, #27ae60);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+}
+
 .title {
   font-size: 0.97rem;
   font-weight: 600;

@@ -24,6 +24,11 @@ export default function ArticleRow({ article, sourceName, onClick, onStar }: Pro
           {article.published_at && (
             <span className={styles.date}>{formatDate(article.published_at)}</span>
           )}
+          {article.scraped_at && (
+            <span className={styles.scraped} title={`Full article fetched ${formatDate(article.scraped_at)}`}>
+              ● full text
+            </span>
+          )}
         </div>
         <h3 className={styles.title}>{article.title}</h3>
         {article.summary && <p className={styles.summary}>{article.summary}</p>}
