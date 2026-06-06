@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { type Article, getArticle, patchArticle, formatDate } from '../api/client'
+import { type Article, getArticle, patchArticle, scrapeArticle, formatDate } from '../api/client'
 import styles from './ArticlePage.module.css'
 
 export default function ArticlePage() {
@@ -12,6 +12,8 @@ export default function ArticlePage() {
   const [article, setArticle] = useState<Article | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [scraping, setScraping] = useState(false)
+  const [scrapeError, setScrapeError] = useState<string | null>(null)
 
   const backPath: string =
     (location.state as { from?: string } | null)?.from ?? '/'
@@ -40,8 +42,26 @@ export default function ArticlePage() {
     if (updated) setArticle(updated)
   }
 
+  const fetchFullArticle = async () => {
+    if (!article?.id) return
+    setScraping(true)
+    setScrapeError(null)
+    try {
+      const updated = await scrapeArticle(article.id)
+      setArticle(updated)
+    } catch (err) {
+      setScrapeError(err instanceof Error ? err.message : 'Could not fetch article')
+    } finally {
+      setScraping(false)
+    }
+  }
+
   if (loading) return <p className={styles.state}>Loading…</p>
   if (error || !article) return <p className={styles.state}>Article not found.</p>
+
+  const hasScraped = !!(article.scraped_body_html || article.scraped_body_text)
+  const displayHtml = hasScraped ? article.scraped_body_html : article.body_html
+  const displayText = hasScraped ? article.scraped_body_text : article.body_text
 
   return (
     <div className={styles.page}>
@@ -56,7 +76,19 @@ export default function ArticlePage() {
         >
           {article.is_starred ? '★' : '☆'}
         </button>
+        <button
+          className={`${styles.scrapeBtn} ${scraping ? styles.scrapeBtnBusy : ''}`}
+          onClick={() => void fetchFullArticle()}
+          disabled={scraping}
+          title={hasScraped ? 'Re-fetch full article text' : 'Download full article text'}
+        >
+          {scraping ? 'Downloading…' : hasScraped ? '↻ Re-fetch article' : '⬇ Fetch full article'}
+        </button>
       </div>
+
+      {scrapeError && (
+        <p className={styles.scrapeError}>{scrapeError}</p>
+      )}
 
       <h1 className={styles.title}>{article.title}</h1>
 
@@ -73,20 +105,26 @@ export default function ArticlePage() {
 
       {article.summary && <p className={styles.summary}>{article.summary}</p>}
 
-      {article.body_html ? (
+      {hasScraped && (
+        <div className={styles.scrapedBadge}>
+          Full article fetched {article.scraped_at ? formatDate(article.scraped_at) : ''}
+        </div>
+      )}
+
+      {displayHtml ? (
         <div
           ref={bodyRef}
           className={styles.body}
-          dangerouslySetInnerHTML={{ __html: article.body_html }}
+          dangerouslySetInnerHTML={{ __html: displayHtml }}
         />
-      ) : article.body_text ? (
+      ) : displayText ? (
         <div className={styles.body}>
-          {article.body_text.split('\n').map((line, i) => (
+          {displayText.split('\n').map((line, i) => (
             <p key={i}>{line}</p>
           ))}
         </div>
       ) : (
-        <p className={styles.noBody}>No content available.</p>
+        <p className={styles.noBody}>No content available. Use "Fetch full article" to download the text.</p>
       )}
     </div>
   )

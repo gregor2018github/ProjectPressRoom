@@ -139,6 +139,18 @@ class Article(BaseModel):
     )
     is_read: bool = Field(default=False, description="True once the user has opened the article.")
     is_starred: bool = Field(default=False, description="User-set bookmark flag.")
+    scraped_body_html: str | None = Field(
+        default=None,
+        description="Sanitised HTML extracted by the full-article scraper. None until scraped.",
+    )
+    scraped_body_text: str | None = Field(
+        default=None,
+        description="Plain-text version of scraped_body_html.",
+    )
+    scraped_at: datetime | None = Field(
+        default=None,
+        description="Timestamp of the most recent successful scrape (UTC).",
+    )
     source_name: str | None = Field(default=None, description="Denormalised source name, populated by API read queries.")
 
 

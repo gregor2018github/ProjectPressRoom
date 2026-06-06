@@ -387,6 +387,26 @@ class Repository:
             result.append((Article.model_validate(d), snippet))
         return result
 
+    def save_scraped_content(
+        self,
+        article_id: int,
+        scraped_body_html: str | None,
+        scraped_body_text: str | None,
+    ) -> bool:
+        """Persist scraped content onto *article_id*; return False if not found."""
+        cursor = self._conn.execute(
+            """
+            UPDATE articles
+            SET scraped_body_html = ?,
+                scraped_body_text = ?,
+                scraped_at        = datetime('now')
+            WHERE id = ?
+            """,
+            (scraped_body_html, scraped_body_text, article_id),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
     def patch_article(
         self,
         article_id: int,

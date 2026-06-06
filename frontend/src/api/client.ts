@@ -57,6 +57,9 @@ export interface Article {
   content_hash: string
   is_read: boolean
   is_starred: boolean
+  scraped_body_html: string | null
+  scraped_body_text: string | null
+  scraped_at: string | null
   source_name: string | null
 }
 
@@ -164,6 +167,15 @@ export const searchArticles = (q: string, limit = 50, filters: SearchFilters = {
 
 export const patchArticle = (id: number, body: { is_read?: boolean; is_starred?: boolean }) =>
   req<Article>(`/api/articles/${id}`, { method: 'PATCH', ...json(body) })
+
+export const scrapeArticle = async (id: number): Promise<Article> => {
+  const res = await fetch(`${BASE}/api/articles/${id}/scrape`, { method: 'POST' })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null) as { detail?: string } | null
+    throw new Error(body?.detail ?? `${res.status} ${res.statusText}`)
+  }
+  return res.json() as Promise<Article>
+}
 
 export const getRuns = (limit = 50) => req<FetchRun[]>(`/api/runs?limit=${limit}`)
 

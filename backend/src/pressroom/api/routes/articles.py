@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from pressroom.api.deps import get_repo
 from pressroom.db.repository import Repository
 from pressroom.models import Article
+from pressroom.scraper import scrape_article
 
 router = APIRouter(tags=["articles"])
 
@@ -101,6 +102,28 @@ def get_article(
     if article is None:
         raise HTTPException(status_code=404, detail="Article not found.")
     return article
+
+
+@router.post("/articles/{article_id}/scrape")
+def scrape_article_endpoint(
+    article_id: int,
+    repo: Repository = Depends(get_repo),
+) -> Article:
+    """Fetch the article's URL, extract the main text, and save it to the database."""
+    article = repo.get_article_by_id(article_id)
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found.")
+
+    scraped_html, scraped_text, error = scrape_article(article.url)
+    if error:
+        raise HTTPException(status_code=422, detail=f"Scraping failed: {error}")
+
+    repo.save_scraped_content(article_id, scraped_html, scraped_text)
+
+    updated = repo.get_article_by_id(article_id)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Article not found.")
+    return updated
 
 
 @router.patch("/articles/{article_id}")
