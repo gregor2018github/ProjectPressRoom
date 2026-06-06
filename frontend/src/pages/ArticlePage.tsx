@@ -103,7 +103,9 @@ export default function ArticlePage() {
         )}
       </div>
 
-      {article.summary && <p className={styles.summary}>{article.summary}</p>}
+      {article.summary && article.summary.trim() !== (article.body_text ?? '').trim() && (
+        <p className={styles.summary}>{article.summary}</p>
+      )}
 
       {hasScraped && (
         <div className={styles.scrapedBadge}>

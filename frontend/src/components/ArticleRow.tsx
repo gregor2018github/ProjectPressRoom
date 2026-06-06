@@ -31,7 +31,9 @@ export default function ArticleRow({ article, sourceName, onClick, onStar }: Pro
           )}
         </div>
         <h3 className={styles.title}>{article.title}</h3>
-        {article.summary && <p className={styles.summary}>{article.summary}</p>}
+        {article.summary && article.summary.trim() !== (article.body_text ?? '').trim() && (
+          <p className={styles.summary}>{article.summary}</p>
+        )}
       </div>
       <button
         className={`${styles.star} ${article.is_starred ? styles.starred : ''}`}

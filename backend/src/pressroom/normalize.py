@@ -102,12 +102,16 @@ def normalize(entry: FetchedEntry, source: Source) -> Article:
         if body_html:
             body_text = _to_plain_text(body_html)
 
+    summary = entry.summary or None
+    if summary and body_text and summary.strip() == body_text.strip():
+        summary = None
+
     return Article(
         source_id=source.id,
         external_id=external_id,
         url=entry.url,
         title=entry.title,
-        summary=entry.summary or None,
+        summary=summary,
         body_html=body_html,
         body_text=body_text,
         body_html_raw=body_html_raw,
