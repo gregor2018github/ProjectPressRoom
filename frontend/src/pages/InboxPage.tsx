@@ -248,36 +248,34 @@ export default function InboxPage() {
 
   return (
     <div>
-      {/* ── Top row: inbox filters (inbox mode only) + search toggle ──────── */}
+      {/* ── Top row: inbox filters + search toggle ────────────────────────── */}
       <div className={styles.topRow}>
-        {!searchOpen && (
-          <div className={styles.filters}>
-            <select
-              className={styles.select}
-              value={sourceId ?? ''}
-              onChange={e => setInboxParam('source', e.target.value || undefined)}
-            >
-              <option value="">All sources</option>
-              {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+        <div className={`${styles.filters} ${searchOpen ? styles.filtersHidden : ''}`}>
+          <select
+            className={styles.select}
+            value={sourceId ?? ''}
+            onChange={e => setInboxParam('source', e.target.value || undefined)}
+          >
+            <option value="">All sources</option>
+            {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
 
-            <label className={styles.check}>
-              <input
-                type="checkbox"
-                checked={unreadOnly}
-                onChange={e =>
-                  setSearchParams(prev => {
-                    const next = new URLSearchParams(prev)
-                    if (e.target.checked) next.set('unread', '1'); else next.delete('unread')
-                    next.delete('page')
-                    return next
-                  })
-                }
-              />
-              Unread only
-            </label>
-          </div>
-        )}
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={unreadOnly}
+              onChange={e =>
+                setSearchParams(prev => {
+                  const next = new URLSearchParams(prev)
+                  if (e.target.checked) next.set('unread', '1'); else next.delete('unread')
+                  next.delete('page')
+                  return next
+                })
+              }
+            />
+            Unread only
+          </label>
+        </div>
 
         <button
           className={`${styles.searchToggle} ${searchOpen ? styles.searchToggleActive : ''}`}
@@ -289,8 +287,8 @@ export default function InboxPage() {
         </button>
       </div>
 
-      {/* ── Search panel ─────────────────────────────────────────────────── */}
-      {searchOpen && (
+      {/* ── Search panel (always in DOM, animated open/close) ─────────────── */}
+      <div className={`${styles.searchPanelWrap} ${searchOpen ? styles.searchPanelWrapOpen : ''}`}>
         <div className={styles.searchPanel}>
           <form className={styles.searchForm} onSubmit={submitSearch}>
             <input
@@ -404,105 +402,76 @@ export default function InboxPage() {
             </div>
           </div>
 
-          {searchLoading && <p className={styles.state}>Searching…</p>}
-          {!searchLoading && searched && results.length === 0 && (
-            <p className={styles.state}>No results{q ? ` for "${q}"` : ''}.</p>
-          )}
-          {!searchLoading && !searched && (
-            loading ? (
-              <p className={styles.empty}>Loading…</p>
-            ) : articles.length === 0 ? (
-              <p className={styles.empty}>No articles found.</p>
-            ) : (
-              <>
-                <div className={styles.list}>
-                  {articles.map(a => (
-                    <ArticleRow
-                      key={a.id}
-                      article={a}
-                      sourceName={a.source_name ?? undefined}
-                      onClick={() => void handleInboxClick(a)}
-                      onStar={starred => void handleInboxStar(a, starred)}
-                    />
-                  ))}
-                </div>
-                <div className={styles.pagination}>
-                  <button className={styles.pageBtn} disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                    ← Prev
-                  </button>
-                  <span className={styles.pageInfo}>
-                    Page {page} of {totalPages} ({total} articles)
-                  </span>
-                  <button className={styles.pageBtn} disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                    Next →
-                  </button>
-                </div>
-              </>
-            )
-          )}
-          {!searchLoading && results.length > 0 && (
-            <>
-              <p className={styles.resultCount}>
-                {results.length === limit
-                  ? `First ${limit} results${q ? ` for "${q}"` : ''}`
-                  : `${results.length} result${results.length !== 1 ? 's' : ''}${q ? ` for "${q}"` : ''}`}
-                {activeFilterCount > 0 && (
-                  <span className={styles.filterNote}>
-                    {' '}· {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
-                  </span>
-                )}
-              </p>
-              <div className={styles.hitList}>
-                {results.map(hit => (
-                  <div
-                    key={hit.id}
-                    className={`${styles.hit} ${hit.is_read ? styles.hitRead : ''}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => void handleSearchClick(hit)}
-                    onKeyDown={e => e.key === 'Enter' && void handleSearchClick(hit)}
-                  >
-                    <div className={styles.hitBody}>
-                      <div className={styles.hitMeta}>
-                        {sourceMap.get(hit.source_id) && (
-                          <span className={styles.hitSource}>{sourceMap.get(hit.source_id)}</span>
-                        )}
-                        {hit.published_at && (
-                          <span className={styles.hitDate}>{formatDate(hit.published_at)}</span>
-                        )}
-                        {hit.author && (
-                          <span className={styles.hitAuthor}>{hit.author}</span>
-                        )}
-                        {hit.scraped_at && (
-                          <span className={styles.hitScraped}
-                            title={`Full article fetched ${formatDate(hit.scraped_at)}`}>
-                            ● full text
-                          </span>
-                        )}
-                      </div>
-                      <h3 className={styles.hitTitle}>{hit.title}</h3>
-                      <p
-                        className={styles.snippet}
-                        dangerouslySetInnerHTML={{ __html: hit.snippet }}
-                      />
-                    </div>
-                    <button
-                      className={`${styles.star} ${hit.is_starred ? styles.starred : ''}`}
-                      title={hit.is_starred ? 'Unstar' : 'Star'}
-                      onClick={e => { e.stopPropagation(); void handleSearchStar(hit, !hit.is_starred) }}
-                    >
-                      {hit.is_starred ? '★' : '☆'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
         </div>
+      </div>
+
+      {searchOpen && searchLoading && <p className={styles.state}>Searching…</p>}
+      {searchOpen && !searchLoading && searched && results.length === 0 && (
+        <p className={styles.state}>No results{q ? ` for "${q}"` : ''}.</p>
       )}
 
-      {/* ── Inbox article list ────────────────────────────────────────────── */}
-      {!searchOpen && (
+      {/* ── Content area ─────────────────────────────────────────────────── */}
+      {searchOpen && !searchLoading && results.length > 0 && (
+        <>
+          <p className={styles.resultCount}>
+            {results.length === limit
+              ? `First ${limit} results${q ? ` for "${q}"` : ''}`
+              : `${results.length} result${results.length !== 1 ? 's' : ''}${q ? ` for "${q}"` : ''}`}
+            {activeFilterCount > 0 && (
+              <span className={styles.filterNote}>
+                {' '}· {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+              </span>
+            )}
+          </p>
+          <div className={styles.hitList}>
+            {results.map(hit => (
+              <div
+                key={hit.id}
+                className={`${styles.hit} ${hit.is_read ? styles.hitRead : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => void handleSearchClick(hit)}
+                onKeyDown={e => e.key === 'Enter' && void handleSearchClick(hit)}
+              >
+                <div className={styles.hitBody}>
+                  <div className={styles.hitMeta}>
+                    {sourceMap.get(hit.source_id) && (
+                      <span className={styles.hitSource}>{sourceMap.get(hit.source_id)}</span>
+                    )}
+                    {hit.published_at && (
+                      <span className={styles.hitDate}>{formatDate(hit.published_at)}</span>
+                    )}
+                    {hit.author && (
+                      <span className={styles.hitAuthor}>{hit.author}</span>
+                    )}
+                    {hit.scraped_at && (
+                      <span className={styles.hitScraped}
+                        title={`Full article fetched ${formatDate(hit.scraped_at)}`}>
+                        ● full text
+                      </span>
+                    )}
+                  </div>
+                  <h3 className={styles.hitTitle}>{hit.title}</h3>
+                  <p
+                    className={styles.snippet}
+                    dangerouslySetInnerHTML={{ __html: hit.snippet }}
+                  />
+                </div>
+                <button
+                  className={`${styles.star} ${hit.is_starred ? styles.starred : ''}`}
+                  title={hit.is_starred ? 'Unstar' : 'Star'}
+                  onClick={e => { e.stopPropagation(); void handleSearchStar(hit, !hit.is_starred) }}
+                >
+                  {hit.is_starred ? '★' : '☆'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* inbox list — shown when search is closed OR search is open but unsearched */}
+      {(!searchOpen || (searchOpen && !searched && !searchLoading)) && (
         loading ? (
           <p className={styles.empty}>Loading…</p>
         ) : articles.length === 0 ? (

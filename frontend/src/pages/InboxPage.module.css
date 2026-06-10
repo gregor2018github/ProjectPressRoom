@@ -14,6 +14,12 @@
   gap: 0.5rem;
   align-items: center;
   flex: 1;
+  transition: opacity 0.2s ease;
+}
+
+.filtersHidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .select,
@@ -75,8 +81,23 @@
 
 /* ── Search panel ────────────────────────────────────────────────────────── */
 
+/* Outer wrapper drives the height animation via grid-template-rows */
+.searchPanelWrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.32s ease, opacity 0.2s ease;
+}
+
+.searchPanelWrapOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 0.32s ease, opacity 0.25s ease 0.05s;
+}
+
+/* Inner panel must have overflow:hidden for the grid trick to clip content */
 .searchPanel {
-  margin-bottom: 0.5rem;
+  overflow: hidden;
 }
 
 .searchForm {
