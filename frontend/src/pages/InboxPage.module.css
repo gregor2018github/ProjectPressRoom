@@ -95,9 +95,11 @@
   transition: grid-template-rows 0.32s ease, opacity 0.25s ease 0.05s;
 }
 
-/* Inner panel must have overflow:hidden for the grid trick to clip content */
+/* Inner panel must have overflow:hidden for the grid trick to clip content.
+   padding: 3px gives focus outlines room so they aren't clipped at the edges. */
 .searchPanel {
   overflow: hidden;
+  padding: 3px;
 }
 
 .searchForm {
