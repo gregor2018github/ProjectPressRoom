@@ -6,6 +6,7 @@ No I/O.  All side-effectful work (DB writes, HTTP calls) happens elsewhere.
 import hashlib
 import re
 from datetime import UTC, datetime
+from urllib.parse import urljoin, urlparse
 
 import nh3
 
@@ -37,9 +38,29 @@ _EMPTY_TAG_SET: set[str] = set()
 # ---------------------------------------------------------------------------
 
 
-def _sanitize_html(raw: str) -> str | None:
-    """Sanitise *raw* to the allowed tag allowlist; return None if empty after cleaning."""
+def _make_links_absolute(html: str, base_url: str) -> str:
+    """Rewrite relative href values in already-sanitised HTML to absolute URLs."""
+    if not urlparse(base_url).scheme:
+        return html
+
+    def _rewrite(m: re.Match) -> str:
+        href = m.group(1)
+        # Already absolute or a special scheme — leave as-is
+        if re.match(r'^(https?|mailto|ftp)://', href) or href.startswith('//'):
+            return m.group(0)
+        return f'href="{urljoin(base_url, href)}"'
+
+    return re.sub(r'href="([^"]*)"', _rewrite, html)
+
+
+def _sanitize_html(raw: str, base_url: str | None = None) -> str | None:
+    """Sanitise *raw* to the allowed tag allowlist; return None if empty after cleaning.
+
+    If *base_url* is provided, relative ``href`` values are resolved to absolute URLs.
+    """
     cleaned = nh3.clean(raw, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRIBUTES)
+    if cleaned and base_url:
+        cleaned = _make_links_absolute(cleaned, base_url)
     return cleaned.strip() or None
 
 
@@ -98,7 +119,7 @@ def normalize(entry: FetchedEntry, source: Source) -> Article:
 
     if entry.body_html:
         body_html_raw = entry.body_html
-        body_html = _sanitize_html(entry.body_html)
+        body_html = _sanitize_html(entry.body_html, base_url=entry.url or None)
         if body_html:
             body_text = _to_plain_text(body_html)
 

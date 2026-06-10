@@ -5,6 +5,7 @@ import lxml.html
 import nh3
 import httpx
 import trafilatura
+from pressroom.normalize import _make_links_absolute
 
 _HEADERS = {
     "User-Agent": (
@@ -151,6 +152,8 @@ def scrape_article(
         )
         if raw_html:
             cleaned = nh3.clean(raw_html, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRS).strip()
+            if cleaned:
+                cleaned = _make_links_absolute(cleaned, url)
             scraped_html = cleaned or None
     except Exception:  # trafilatura may raise on malformed input
         pass

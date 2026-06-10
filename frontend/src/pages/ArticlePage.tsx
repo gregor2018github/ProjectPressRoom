@@ -27,8 +27,18 @@ export default function ArticlePage() {
   }, [id])
 
   useEffect(() => {
-    if (!bodyRef.current) return
+    if (!bodyRef.current || !article) return
+    const base = article.url
     bodyRef.current.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(a => {
+      const href = a.getAttribute('href')
+      if (href && base) {
+        try {
+          // Resolve relative links (e.g. /news/foo) against the article's own URL
+          a.href = new URL(href, base).href
+        } catch {
+          // Malformed href — leave unchanged
+        }
+      }
       a.target = '_blank'
       a.rel = 'noreferrer'
     })
