@@ -25,6 +25,8 @@ class SourceResponse(Source):
     last_run_status: Literal["running", "ok", "error", "not_modified"] | None = None
     last_run_articles_new: int | None = None
     last_run_finished_at: object = None  # datetime | None, kept as object for JSON
+    article_count: int = 0
+    article_size_bytes: int = 0
 
 
 class CreateSourceBody(BaseModel):
@@ -54,6 +56,9 @@ def _enrich(source: Source, repo: Repository) -> SourceResponse:
         data["last_run_status"] = last_run.status
         data["last_run_articles_new"] = last_run.articles_new
         data["last_run_finished_at"] = last_run.finished_at
+    count, size = repo.count_articles_for_source(source.id)  # type: ignore[arg-type]
+    data["article_count"] = count
+    data["article_size_bytes"] = size
     return SourceResponse.model_validate(data)
 
 

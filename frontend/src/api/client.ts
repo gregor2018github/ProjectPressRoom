@@ -38,6 +38,8 @@ export interface Source {
   last_run_status: 'running' | 'ok' | 'error' | 'not_modified' | null
   last_run_articles_new: number | null
   last_run_finished_at: string | null
+  article_count: number
+  article_size_bytes: number
 }
 
 export interface Article {

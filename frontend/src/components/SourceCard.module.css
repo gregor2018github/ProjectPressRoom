@@ -117,6 +117,18 @@
   font-style: italic;
 }
 
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.statSep {
+  opacity: 0.4;
+}
+
 .error {
   font-size: 0.8rem;
   color: var(--error);

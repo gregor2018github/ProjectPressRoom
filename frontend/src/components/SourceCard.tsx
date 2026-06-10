@@ -2,6 +2,12 @@ import { useState } from 'react'
 import { type Source, formatDate, patchSource, triggerFetch } from '../api/client'
 import styles from './SourceCard.module.css'
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 function StatusBadge({ status }: { status: string | null }) {
   if (!status) return null
   return <span className={`${styles.badge} ${styles[status] ?? ''}`}>{status}</span>
@@ -63,6 +69,12 @@ export default function SourceCard({ source, onChange }: Props) {
           <span className={styles.time}>{formatDate(source.last_run_finished_at)}</span>
         )}
         {!source.last_run_status && <span className={styles.never}>Never fetched</span>}
+      </div>
+
+      <div className={styles.stats}>
+        <span>{source.article_count.toLocaleString()} articles</span>
+        <span className={styles.statSep}>·</span>
+        <span>{formatBytes(source.article_size_bytes)}</span>
       </div>
 
       {source.last_error && (

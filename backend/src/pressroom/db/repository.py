@@ -182,6 +182,24 @@ class Repository:
         row = self._conn.execute("SELECT COUNT(*) FROM articles").fetchone()
         return int(row[0])
 
+    def count_articles_for_source(self, source_id: int) -> tuple[int, int]:
+        """Return (article_count, approx_size_bytes) for one source."""
+        row = self._conn.execute(
+            """
+            SELECT
+                COUNT(*),
+                SUM(
+                    LENGTH(COALESCE(title, '')) +
+                    LENGTH(COALESCE(summary, '')) +
+                    LENGTH(COALESCE(body_text, ''))
+                )
+            FROM articles
+            WHERE source_id = ?
+            """,
+            (source_id,),
+        ).fetchone()
+        return (int(row[0]), int(row[1] or 0))
+
     def get_stats(self) -> dict[str, object]:
         """Return aggregate database statistics."""
         row = self._conn.execute(
