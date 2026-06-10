@@ -1,9 +1,19 @@
+/* ── Top row (filters + search toggle) ──────────────────────────────────── */
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
   align-items: center;
+  flex: 1;
 }
 
 .select,
@@ -31,6 +41,334 @@
   cursor: pointer;
   user-select: none;
 }
+
+/* ── Search toggle button ────────────────────────────────────────────────── */
+
+.searchToggle {
+  padding: 0.4rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  margin-left: auto;
+}
+
+.searchToggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.searchToggleActive {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.searchToggleActive:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #fff;
+}
+
+/* ── Search panel ────────────────────────────────────────────────────────── */
+
+.searchPanel {
+  margin-bottom: 0.5rem;
+}
+
+.searchForm {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.searchInput:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.searchBtn {
+  padding: 0.5rem 1.1rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.searchBtn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.searchBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Filter bar */
+
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.filterFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.filterDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 -1rem;
+  opacity: 0.6;
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 130px;
+}
+
+.filterLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filterSelect,
+.filterInput {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.filterSelect:focus,
+.filterInput:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* Toggle chips */
+
+.chip {
+  padding: 0.32rem 0.75rem;
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.chipActive {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.chipActive:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #fff;
+}
+
+.clearBtn {
+  padding: 0.32rem 0.75rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.clearBtn:hover {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/* Search results */
+
+.state,
+.hint {
+  text-align: center;
+  color: var(--text-muted);
+  margin-top: 2rem;
+}
+
+.resultCount {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.filterNote {
+  color: var(--primary);
+}
+
+.hitList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hit {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: box-shadow 0.12s, border-color 0.12s;
+}
+
+.hit:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.hit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.hitRead {
+  opacity: 0.62;
+}
+
+.hitBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.hitMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.hitSource {
+  background: var(--border);
+  color: var(--text-muted);
+  padding: 0.05rem 0.45rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hitDate,
+.hitAuthor {
+  color: var(--text-muted);
+}
+
+.hitAuthor {
+  font-style: italic;
+}
+
+.hitScraped {
+  color: #16a34a;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.hitTitle {
+  font-size: 0.97rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.snippet {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.snippet :global(mark) {
+  background: var(--mark-bg);
+  color: var(--text);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.star {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  padding: 0.1rem 0.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.star:hover {
+  color: var(--warning);
+}
+
+.starred {
+  color: var(--warning);
+}
+
+/* ── Inbox article list ───────────────────────────────────────────────────── */
 
 .list {
   display: flex;

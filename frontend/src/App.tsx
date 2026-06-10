@@ -4,7 +4,6 @@ import styles from './App.module.css'
 import { type Health, getHealth, shutdownApp } from './api/client'
 import ArticlePage from './pages/ArticlePage'
 import InboxPage from './pages/InboxPage'
-import SearchPage from './pages/SearchPage'
 import SetupPage from './pages/SetupPage'
 import SourcesPage from './pages/SourcesPage'
 
@@ -143,9 +142,6 @@ function Nav({
         <NavLink to="/sources" className={({ isActive }) => (isActive ? styles.active : '')}>
           Sources
         </NavLink>
-        <NavLink to="/search" className={({ isActive }) => (isActive ? styles.active : '')}>
-          Search
-        </NavLink>
         <NavLink to="/setup" className={({ isActive }) => (isActive ? styles.active : '')}>
           Setup
         </NavLink>
@@ -189,7 +185,6 @@ function AppShell() {
           <Route path="/" element={<InboxPage />} />
           <Route path="/sources" element={<SourcesPage />} />
           <Route path="/articles/:id" element={<ArticlePage />} />
-          <Route path="/search" element={<SearchPage />} />
           <Route path="/setup" element={<SetupPage />} />
         </Routes>
       </main>
