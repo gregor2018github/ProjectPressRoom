@@ -103,7 +103,6 @@ export default function InboxPage() {
 
   // ── Inbox load ────────────────────────────────────────────────────────────
   const loadInbox = useCallback(() => {
-    if (searchOpen) return
     setLoading(true)
     getArticles({
       page, page_size: PAGE_SIZE,
@@ -116,7 +115,7 @@ export default function InboxPage() {
       .then(r => { setArticles(r.items); setTotal(r.total) })
       .catch(() => undefined)
       .finally(() => setLoading(false))
-  }, [searchOpen, page, sourceId, language, fromDate, toDate, unreadOnly])
+  }, [page, sourceId, language, fromDate, toDate, unreadOnly])
 
   useEffect(() => { loadInbox() }, [loadInbox])
 
@@ -261,30 +260,6 @@ export default function InboxPage() {
               <option value="">All sources</option>
               {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-
-            <input
-              className={styles.input}
-              type="text"
-              placeholder="Language (e.g. en)"
-              value={language ?? ''}
-              onChange={e => setInboxParam('lang', e.target.value || undefined)}
-            />
-
-            <input
-              className={styles.input}
-              type="date"
-              title="From date"
-              value={fromDate ?? ''}
-              onChange={e => setInboxParam('from', e.target.value || undefined)}
-            />
-
-            <input
-              className={styles.input}
-              type="date"
-              title="To date"
-              value={toDate ?? ''}
-              onChange={e => setInboxParam('to', e.target.value || undefined)}
-            />
 
             <label className={styles.check}>
               <input
@@ -434,7 +409,36 @@ export default function InboxPage() {
             <p className={styles.state}>No results{q ? ` for "${q}"` : ''}.</p>
           )}
           {!searchLoading && !searched && (
-            <p className={styles.hint}>Type a query and press Search, or apply filters.</p>
+            loading ? (
+              <p className={styles.empty}>Loading…</p>
+            ) : articles.length === 0 ? (
+              <p className={styles.empty}>No articles found.</p>
+            ) : (
+              <>
+                <div className={styles.list}>
+                  {articles.map(a => (
+                    <ArticleRow
+                      key={a.id}
+                      article={a}
+                      sourceName={a.source_name ?? undefined}
+                      onClick={() => void handleInboxClick(a)}
+                      onStar={starred => void handleInboxStar(a, starred)}
+                    />
+                  ))}
+                </div>
+                <div className={styles.pagination}>
+                  <button className={styles.pageBtn} disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                    ← Prev
+                  </button>
+                  <span className={styles.pageInfo}>
+                    Page {page} of {totalPages} ({total} articles)
+                  </span>
+                  <button className={styles.pageBtn} disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                    Next →
+                  </button>
+                </div>
+              </>
+            )
           )}
           {!searchLoading && results.length > 0 && (
             <>
