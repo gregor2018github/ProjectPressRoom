@@ -104,18 +104,36 @@ def _launch_browser(url: str) -> "subprocess.Popen[bytes] | None":
 
 
 def _kill_browser(proc: "subprocess.Popen[bytes]") -> None:
-    """Terminate the browser process tree."""
+    """Terminate the browser process tree.
+
+    Tries a graceful shutdown first (WM_CLOSE) so Edge can write a clean
+    exit flag and not show the 'Restore pages' dialog on next launch.
+    Force-kills only if the process hasn't exited after a short wait.
+    """
     if proc.poll() is not None:
         return  # Already exited (e.g. user closed it manually)
     if sys.platform == "win32":
-        # /T kills the whole process tree (GPU, renderer, … children)
+        # Graceful: sends WM_CLOSE to all windows in the process tree
         subprocess.run(
-            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+            ["taskkill", "/T", "/PID", str(proc.pid)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+        try:
+            proc.wait(timeout=4)
+        except subprocess.TimeoutExpired:
+            # Last resort: force-kill if it didn't respond in time
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
     else:
         proc.terminate()
+        try:
+            proc.wait(timeout=4)
+        except subprocess.TimeoutExpired:
+            proc.kill()
 
 
 def _init_db() -> None:
